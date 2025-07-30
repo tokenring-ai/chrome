@@ -1,5 +1,5 @@
-import puppeteer from "puppeteer";
 import ChatService from "@token-ring/chat/ChatService";
+import puppeteer from "puppeteer";
 import { z } from "zod";
 
 export default execute;
