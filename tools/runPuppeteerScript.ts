@@ -2,19 +2,32 @@ import ChatService from "@token-ring/chat/ChatService";
 import puppeteer from "puppeteer";
 import { z } from "zod";
 
+export type ExecuteParams = {
+	script: string;
+	navigateTo?: string;
+	timeoutSeconds?: number;
+};
+
+export type ExecuteResult = {
+	ok: boolean;
+	result: unknown;
+	logs: string[];
+	error: unknown;
+};
+
 export default execute;
 export async function execute(
-	{ script, navigateTo, timeoutSeconds = 30 },
-	registry,
-) {
+	{ script, navigateTo, timeoutSeconds = 30 }: ExecuteParams,
+	registry: any,
+): Promise<ExecuteResult> {
 	const chatService = registry.requireFirstServiceByType(ChatService);
 	// We use dynamic import for puppeteer to avoid a hard dependency unless required
 
-	const browser = await puppeteer.launch({ headless: false }); //"new" });
+	const browser = await puppeteer.launch({ headless: false }); // "new" });
 	const page = await browser.newPage();
 
-	const logs = [];
-	function consoleLog(...args) {
+	const logs: string[] = [];
+	function consoleLog(...args: unknown[]) {
 		logs.push(
 			args
 				.map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
@@ -24,9 +37,9 @@ export async function execute(
 	page.on("console", (msg) => {
 		logs.push(`[browser] ${msg.type()}: ${msg.text()}`);
 	});
-	let result = null;
-	let error = null;
-	let timeout;
+	let result: unknown = null;
+	let error: unknown = null;
+	let timeout: NodeJS.Timeout | undefined;
 	try {
 		if (navigateTo) {
 			await page.goto(navigateTo, { waitUntil: "load", timeout: 20000 });
@@ -39,7 +52,7 @@ export async function execute(
 			"browser",
 			"consoleLog",
 			`return ${asyncScriptWrapper}`,
-		);
+		) as (page: any, browser: any, consoleLog: (...args: unknown[]) => void) => Promise<unknown>;
 		timeout = setTimeout(
 			() => {
 				throw new Error("Script timed out");
@@ -47,11 +60,11 @@ export async function execute(
 			Math.max(5, Math.min(timeoutSeconds, 180)) * 1000,
 		);
 		result = await fn(page, browser, consoleLog);
-	} catch (err) {
-		error = err.message || String(err);
-		chatService.errorLine("Error executing Puppeteer script:", error);
+	} catch (err: any) {
+		error = err?.message || String(err);
+		chatService.errorLine("Error executing Puppeteer script:", error as any);
 	} finally {
-		clearTimeout(timeout);
+		if (timeout) clearTimeout(timeout);
 		await browser.close();
 	}
 	return {
@@ -63,7 +76,7 @@ export async function execute(
 }
 
 export const description =
-	"Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result.";
+	"Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
 
 export const parameters = z.object({
 	script: z
