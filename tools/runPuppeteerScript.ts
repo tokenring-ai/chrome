@@ -1,9 +1,10 @@
 import ChatService from "@token-ring/chat/ChatService";
 import puppeteer from "puppeteer";
 import { z } from "zod";
+import {Registry} from "@token-ring/registry";
 
 export type ExecuteParams = {
-	script: string;
+	script?: string;
 	navigateTo?: string;
 	timeoutSeconds?: number;
 };
@@ -15,10 +16,9 @@ export type ExecuteResult = {
 	error: unknown;
 };
 
-export default execute;
 export async function execute(
 	{ script, navigateTo, timeoutSeconds = 30 }: ExecuteParams,
-	registry: any,
+	registry: Registry,
 ): Promise<ExecuteResult> {
 	const chatService = registry.requireFirstServiceByType(ChatService);
 	// We use dynamic import for puppeteer to avoid a hard dependency unless required
@@ -62,7 +62,7 @@ export async function execute(
 		result = await fn(page, browser, consoleLog);
 	} catch (err: any) {
 		error = err?.message || String(err);
-		chatService.errorLine("Error executing Puppeteer script:", error as any);
+		chatService.errorLine("Error executing Puppeteer script:", error );
 	} finally {
 		if (timeout) clearTimeout(timeout);
 		await browser.close();
