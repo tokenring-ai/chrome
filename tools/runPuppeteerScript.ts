@@ -1,6 +1,6 @@
 import ChatService from "@token-ring/chat/ChatService";
 import puppeteer from "puppeteer";
-import { z } from "zod";
+import {z} from "zod";
 import {Registry} from "@token-ring/registry";
 
 export type ExecuteParams = {
