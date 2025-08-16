@@ -9,12 +9,15 @@ export type ExecuteParams = {
 	timeoutSeconds?: number;
 };
 
-export type ExecuteResult = {
-	ok: boolean;
-	result: unknown;
-	logs: string[];
-	error: unknown;
-};
+// Updated ExecuteResult to conform to error handling specification
+export type ExecuteResult =
+	| {
+		result: unknown;
+		logs: string[];
+	}
+	| {
+		error: string;
+	};
 
 export async function execute(
 	{ script, navigateTo, timeoutSeconds = 30 }: ExecuteParams,
@@ -38,7 +41,7 @@ export async function execute(
 		logs.push(`[browser] ${msg.type()}: ${msg.text()}`);
 	});
 	let result: unknown = null;
-	let error: unknown = null;
+	let errorMessage: string | null = null;
 	let timeout: NodeJS.Timeout | undefined;
 	try {
 		if (navigateTo) {
@@ -61,17 +64,19 @@ export async function execute(
 		);
 		result = await fn(page, browser, consoleLog);
 	} catch (err: any) {
-		error = err?.message || String(err);
-		chatService.errorLine("Error executing Puppeteer script:", error );
+		errorMessage = err?.message || String(err);
+		// Prefix error messages with tool name as required
+		chatService.errorLine(`[runPuppeteerScript] Error executing Puppeteer script: ${errorMessage}`);
 	} finally {
 		if (timeout) clearTimeout(timeout);
 		await browser.close();
 	}
+	if (errorMessage) {
+		return { error: errorMessage };
+	}
 	return {
-		ok: !error,
 		result,
 		logs,
-		error,
 	};
 }
 
