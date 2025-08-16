@@ -1,7 +1,10 @@
 import ChatService from "@token-ring/chat/ChatService";
-import {Registry} from "@token-ring/registry";
+import { Registry } from "@token-ring/registry";
 import puppeteer from "puppeteer";
-import {z} from "zod";
+import { z } from "zod";
+
+// Exported tool name in the required format
+export const name = "chrome/runPuppeteerScript";
 
 export type ExecuteParams = {
   script?: string;
@@ -9,24 +12,24 @@ export type ExecuteParams = {
   timeoutSeconds?: number;
 };
 
-// Updated ExecuteResult to conform to error handling specification
-export type ExecuteResult =
-  | {
+export type ExecuteResult = {
   result: unknown;
   logs: string[];
-}
-  | {
-  error: string;
 };
 
 export async function execute(
-  {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
+  { script, navigateTo, timeoutSeconds = 30 }: ExecuteParams,
   registry: Registry,
 ): Promise<ExecuteResult> {
   const chatService = registry.requireFirstServiceByType(ChatService);
-  // We use dynamic import for puppeteer to avoid a hard dependency unless required
 
-  const browser = await puppeteer.launch({headless: false}); // "new" });
+  // Validate required parameters
+  if (!script) {
+    throw new Error(`[${name}] script is required`);
+  }
+
+  // Launch Puppeteer browser (headless mode can be adjusted as needed)
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
   const logs: string[] = [];
@@ -42,14 +45,15 @@ export async function execute(
   page.on("console", (msg) => {
     logs.push(`[browser] ${msg.type()}: ${msg.text()}`);
   });
+
   let result: unknown = null;
-  let errorMessage: string | null = null;
   let timeout: NodeJS.Timeout | undefined;
   try {
     if (navigateTo) {
-      await page.goto(navigateTo, {waitUntil: "load", timeout: 20000});
+      await page.goto(navigateTo, { waitUntil: "load", timeout: 20000 });
     }
-    // Build a wrapper function to eval the user script with context
+
+    // Build a wrapper function to evaluate the user script with context
     const asyncScriptWrapper = `(async () => {\n  const userFn = ${script}\n  return await userFn({ page, browser, consoleLog });\n})();`;
 
     const fn = new Function(
@@ -57,25 +61,27 @@ export async function execute(
       "browser",
       "consoleLog",
       `return ${asyncScriptWrapper}`,
-    ) as (page: any, browser: any, consoleLog: (...args: unknown[]) => void) => Promise<unknown>;
-    timeout = setTimeout(
-      () => {
-        throw new Error("Script timed out");
-      },
-      Math.max(5, Math.min(timeoutSeconds, 180)) * 1000,
-    );
+    ) as (
+      page: any,
+      browser: any,
+      consoleLog: (...args: unknown[]) => void,
+    ) => Promise<unknown>;
+
+    // Enforce script timeout
+    timeout = setTimeout(() => {
+      throw new Error("Script timed out");
+    }, Math.max(5, Math.min(timeoutSeconds, 180)) * 1000);
+
     result = await fn(page, browser, consoleLog);
   } catch (err: any) {
-    errorMessage = err?.message || String(err);
-    // Prefix error messages with tool name as required
-    chatService.errorLine(`[runPuppeteerScript] Error executing Puppeteer script: ${errorMessage}`);
+    // Throw errors with the required prefix instead of returning them
+    throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
     if (timeout) clearTimeout(timeout);
     await browser.close();
   }
-  if (errorMessage) {
-    return {error: errorMessage};
-  }
+
+  // Return successful execution result
   return {
     result,
     logs,
