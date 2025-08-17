@@ -62,8 +62,8 @@ export async function execute(
       "consoleLog",
       `return ${asyncScriptWrapper}`,
     ) as (
-      page: any,
-      browser: any,
+      page: puppeteer.Page,
+      browser: puppeteer.Browser,
       consoleLog: (...args: unknown[]) => void,
     ) => Promise<unknown>;
 
