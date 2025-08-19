@@ -1,7 +1,7 @@
 import ChatService from "@token-ring/chat/ChatService";
-import { Registry } from "@token-ring/registry";
+import {Registry} from "@token-ring/registry";
 import puppeteer from "puppeteer";
-import { z } from "zod";
+import {z} from "zod";
 
 // Exported tool name in the required format
 export const name = "chrome/runPuppeteerScript";
@@ -18,7 +18,7 @@ export type ExecuteResult = {
 };
 
 export async function execute(
-  { script, navigateTo, timeoutSeconds = 30 }: ExecuteParams,
+  {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
   registry: Registry,
 ): Promise<ExecuteResult> {
   const chatService = registry.requireFirstServiceByType(ChatService);
@@ -29,7 +29,7 @@ export async function execute(
   }
 
   // Launch Puppeteer browser (headless mode can be adjusted as needed)
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
 
   const logs: string[] = [];
@@ -50,7 +50,7 @@ export async function execute(
   let timeout: NodeJS.Timeout | undefined;
   try {
     if (navigateTo) {
-      await page.goto(navigateTo, { waitUntil: "load", timeout: 20000 });
+      await page.goto(navigateTo, {waitUntil: "load", timeout: 20000});
     }
 
     // Build a wrapper function to evaluate the user script with context
@@ -91,7 +91,7 @@ export async function execute(
 export const description =
   "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
 
-export const parameters = z.object({
+export const inputSchema = z.object({
   script: z
     .string()
     .describe(

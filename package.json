@@ -1,26 +1,23 @@
 {
-	"name": "@token-ring/chrome",
-	"version": "0.1.0",
+ "name": "@token-ring/chrome",
+ "version": "0.1.0",
  "description": "Chrome browser automation for Token Ring",
-	"dependencies": {
-		"@token-ring/chat": "0.1.0",
-
-		"@token-ring/registry": "0.1.0",
-		"puppeteer": "^24.16.2"
-	},
-	"exports": {
-		".": "./index.ts",
-		"./*": "./*.ts"
-	},
-	"types": "./dist-types/index.d.ts",
-	"license": "MIT",
-	"scripts": {
-
-		"build": "tsc -p tsconfig.tson"
-
-	},
-	"devDependencies": {
-		"typescript": "^5.9.2"
-	},
-	"type": "module"
+ "dependencies": {
+  "@token-ring/chat": "0.1.0",
+  "@token-ring/registry": "0.1.0",
+  "puppeteer": "^24.16.2"
+ },
+ "exports": {
+  ".": "./index.ts",
+  "./*": "./*.ts"
+ },
+ "types": "./dist-types/index.d.ts",
+ "license": "MIT",
+ "scripts": {
+  "build": "tsc -p tsconfig.tson"
+ },
+ "devDependencies": {
+  "typescript": "^5.9.2"
+ },
+ "type": "module"
 }
