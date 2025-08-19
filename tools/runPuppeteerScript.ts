@@ -21,8 +21,6 @@ export async function execute(
   {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
   registry: Registry,
 ): Promise<ExecuteResult> {
-  const chatService = registry.requireFirstServiceByType(ChatService);
-
   // Validate required parameters
   if (!script) {
     throw new Error(`[${name}] script is required`);
