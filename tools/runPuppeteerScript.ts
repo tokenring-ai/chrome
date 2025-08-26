@@ -1,4 +1,3 @@
-import ChatService from "@token-ring/chat/ChatService";
 import {Registry} from "@token-ring/registry";
 import puppeteer from "puppeteer";
 import {z} from "zod";
@@ -19,7 +18,7 @@ export type ExecuteResult = {
 
 export async function execute(
   {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
-  registry: Registry,
+  _registry: Registry,
 ): Promise<ExecuteResult> {
   // Validate required parameters
   if (!script) {
