@@ -4,5 +4,5 @@ export const name = packageJSON.name;
 export const version = packageJSON.version;
 export const description = packageJSON.description;
 
-// Keep runtime resolution to existing JS bundle
+export {default as ChromeWebSearchResource} from "./ChromeWebSearchResource.ts";
 export * as tools from "./tools.ts";

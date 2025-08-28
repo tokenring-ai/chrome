@@ -5,6 +5,7 @@
  "dependencies": {
   "@token-ring/chat": "0.1.0",
   "@token-ring/registry": "0.1.0",
+  "@token-ring/websearch": "0.1.0",
   "puppeteer": "^24.16.2"
  },
  "exports": {
