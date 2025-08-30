@@ -1,17 +1,17 @@
-import WebSearchResource, {type WebSearchOptions, type WebSearchResult, type WebPageOptions, type WebPageResult} from "@token-ring/websearch/WebSearchResource";
+import WebSearchProvider, {type WebSearchProviderOptions, type WebSearchResult, type WebPageOptions, type WebPageResult} from "@token-ring/websearch/WebSearchProvider";
 import puppeteer, {ConnectOptions, LaunchOptions} from "puppeteer";
 
 export type ChromeWebSearchOptions =
   | ConnectOptions & { launch: false }
   | LaunchOptions & { launch: true };
 
-export default class ChromeWebSearchResource extends WebSearchResource {
+export default class ChromeWebSearchResource extends WebSearchProvider {
   private readonly options: ChromeWebSearchOptions;
   constructor(options: ChromeWebSearchOptions) {
     super();
     this.options = options;
   }
-  async searchWeb(query: string, options?: WebSearchOptions): Promise<WebSearchResult> {
+  async searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult> {
     let browser = await this.getBrowser();
 
     const page = await browser.newPage();
@@ -53,7 +53,7 @@ export default class ChromeWebSearchResource extends WebSearchResource {
     }
   }
 
-  async searchNews(query: string, options?: WebSearchOptions): Promise<WebSearchResult> {
+  async searchNews(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult> {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
     
