@@ -1,11 +1,10 @@
 {
- "name": "@token-ring/chrome",
+ "name": "@tokenring-ai/chrome",
  "version": "0.1.0",
  "description": "Chrome browser automation for Token Ring",
  "dependencies": {
-  "@token-ring/chat": "0.1.0",
-  "@token-ring/registry": "0.1.0",
-  "@token-ring/websearch": "0.1.0",
+  "@tokenring-ai/agent": "0.1.0",
+  "@tokenring-ai/websearch": "0.1.0",
   "puppeteer": "^24.16.2"
  },
  "exports": {

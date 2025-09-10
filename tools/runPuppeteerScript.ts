@@ -1,4 +1,4 @@
-import {Registry} from "@token-ring/registry";
+import Agent from "@tokenring-ai/agent/Agent";
 import puppeteer from "puppeteer";
 import {z} from "zod";
 
@@ -18,7 +18,7 @@ export type ExecuteResult = {
 
 export async function execute(
   {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
-  _registry: Registry,
+  _agent: Agent,
 ): Promise<ExecuteResult> {
   // Validate required parameters
   if (!script) {

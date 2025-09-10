@@ -1,8 +1,14 @@
+import {TokenRingPackage} from "@tokenring-ai/agent";
 import packageJSON from './package.json' with {type: 'json'};
 
-export const name = packageJSON.name;
-export const version = packageJSON.version;
-export const description = packageJSON.description;
+import * as tools from "./tools.ts";
+
+export const packageInfo: TokenRingPackage = {
+  name: packageJSON.name,
+  version: packageJSON.version,
+  description: packageJSON.description,
+  tools
+};
+
 
 export {default as ChromeWebSearchResource} from "./ChromeWebSearchResource.ts";
-export * as tools from "./tools.ts";

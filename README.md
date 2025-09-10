@@ -1,8 +1,8 @@
-@token-ring/chrome
+@tokenring-ai/chrome
 
 Overview
 
-- @token-ring/chrome provides Chrome browser automation utilities for the Token Ring ecosystem. It exposes a tool to run
+- @tokenring-ai/chrome provides Chrome browser automation utilities for the Token Ring ecosystem. It exposes a tool to run
   arbitrary Puppeteer scripts within a managed browser/page context and report results and console logs back through the
   chat service.
 
@@ -26,8 +26,8 @@ Installation
 This package is part of the monorepo and is typically consumed by the Token Ring runtime. If you need to depend on it
 directly:
 
-- Add dependency: "@token-ring/chrome": "0.1.0"
-- Ensure peer packages are available in your workspace: @token-ring/registry, @token-ring/chat.
+- Add dependency: "@tokenring-ai/chrome": "0.1.0"
+- Ensure peer packages are available in your workspace: @tokenring-ai/registry, @tokenring-ai/chat.
 - Puppeteer is declared as a dependency here and will be installed; the tool dynamically launches a browser when
   invoked.
 
@@ -54,9 +54,9 @@ Tool: runPuppeteerScript
 
 Usage (programmatic example)
 
-import { ServiceRegistry } from "@token-ring/registry";
-import * as runPuppeteerScript from "@token-ring/chrome/tools/runPuppeteerScript";
-import ChatService from "@token-ring/chat/ChatService";
+import { ServiceRegistry } from "@tokenring-ai/registry";
+import * as runPuppeteerScript from "@tokenring-ai/chrome/tools/runPuppeteerScript";
+import ChatService from "@tokenring-ai/chat/ChatService";
 
 const registry = new ServiceRegistry();
 // Ensure a ChatService implementation is registered so the tool can log errors/info
