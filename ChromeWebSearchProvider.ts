@@ -10,7 +10,7 @@ export type ChromeWebSearchOptions =
   | ConnectOptions & { launch: false }
   | LaunchOptions & { launch: true };
 
-export default class ChromeWebSearchResource extends WebSearchProvider {
+export default class ChromeWebSearchProvider extends WebSearchProvider {
   private readonly options: ChromeWebSearchOptions;
 
   constructor(options: ChromeWebSearchOptions) {

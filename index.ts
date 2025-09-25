@@ -11,4 +11,4 @@ export const packageInfo: TokenRingPackage = {
 };
 
 
-export {default as ChromeWebSearchResource} from "./ChromeWebSearchResource.ts";
+export {default as ChromeWebSearchProvider} from "./ChromeWebSearchProvider.ts";
