@@ -5,10 +5,8 @@ import WebSearchProvider, {
   type WebSearchResult
 } from "@tokenring-ai/websearch/WebSearchProvider";
 import puppeteer, {ConnectOptions, LaunchOptions} from "puppeteer";
+import {z} from "zod";
 
-export type ChromeWebSearchOptions =
-  | ConnectOptions & { launch: false }
-  | LaunchOptions & { launch: true };
 
 export default class ChromeWebSearchProvider extends WebSearchProvider {
   private readonly options: ChromeWebSearchOptions;
@@ -96,9 +94,14 @@ export default class ChromeWebSearchProvider extends WebSearchProvider {
 
   private async getBrowser() {
     if (this.options.launch) {
-      return await puppeteer.launch(this.options);
+      return await puppeteer.launch(this.options as LaunchOptions);
     } else {
-      return await puppeteer.connect(this.options);
+      return await puppeteer.connect(this.options as ConnectOptions);
     }
   }
 }
+export const ChromeWebSearchOptionsSchema = z.looseObject({
+  launch: z.boolean(),
+});
+
+export type ChromeWebSearchOptions = z.infer<typeof ChromeWebSearchOptionsSchema>;
