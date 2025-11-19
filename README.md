@@ -2,7 +2,8 @@
 
 Overview
 
-- @tokenring-ai/chrome provides Chrome browser automation utilities for the Token Ring ecosystem. It exposes a tool to run
+- @tokenring-ai/chrome provides Chrome browser automation utilities for the Token Ring ecosystem. It exposes a tool to
+  run
   arbitrary Puppeteer scripts within a managed browser/page context and report results and console logs back through the
   chat service.
 
