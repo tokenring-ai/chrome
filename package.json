@@ -5,7 +5,7 @@
  "dependencies": {
   "@tokenring-ai/agent": "0.1.0",
   "@tokenring-ai/websearch": "0.1.0",
-  "puppeteer": "^24.30.0"
+  "puppeteer": "^24.31.0"
  },
  "exports": {
   ".": "./index.ts",
