@@ -1,2 +1,2 @@
-//export * as runPuppeteerScript from "./tools/runPuppeteerScript.ts";
-export * as scrapePageText from "./tools/scrapePageText.ts";
+//export {default as runPuppeteerScript} from "./tools/runPuppeteerScript.ts";
+export {default as scrapePageText} from "./tools/scrapePageText.ts";

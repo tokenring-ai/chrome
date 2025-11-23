@@ -1,23 +1,18 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingToolDefinition} from "@tokenring-ai/chat/types";
 import puppeteer from "puppeteer";
 import {z} from "zod";
 
 // Exported tool name in the required format
-export const name = "chrome/runPuppeteerScript";
-
-export type ExecuteParams = {
-  script?: string;
-  navigateTo?: string;
-  timeoutSeconds?: number;
-};
+const name = "chrome/runPuppeteerScript";
 
 export type ExecuteResult = {
   result: unknown;
   logs: string[];
 };
 
-export async function execute(
-  {script, navigateTo, timeoutSeconds = 30}: ExecuteParams,
+async function execute(
+  {script, navigateTo, timeoutSeconds = 30}: z.infer<typeof inputSchema>,
   _agent: Agent,
 ): Promise<ExecuteResult> {
   // Validate required parameters
@@ -85,10 +80,10 @@ export async function execute(
   };
 }
 
-export const description =
+const description =
   "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
 
-export const inputSchema = z.object({
+const inputSchema = z.object({
   script: z
     .string()
     .describe(
@@ -106,3 +101,7 @@ export const inputSchema = z.object({
     .describe("(Optional) Timeout for script execution (default 30s, max 180).")
     .optional(),
 });
+
+export default {
+  name, description, inputSchema, execute,
+} as TokenRingToolDefinition<typeof inputSchema>;

@@ -1,5 +1,6 @@
-import {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
+import TokenRingApp from "@tokenring-ai/app";
 import {ChatService} from "@tokenring-ai/chat";
+import {TokenRingPlugin} from "@tokenring-ai/app";
 import {WebSearchConfigSchema, WebSearchService} from "@tokenring-ai/websearch";
 import ChromeWebSearchProvider, {ChromeWebSearchOptionsSchema} from "./ChromeWebSearchProvider.js";
 import packageJSON from './package.json' with {type: 'json'};
@@ -9,14 +10,14 @@ export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(agentTeam: AgentTeam) {
-    agentTeam.waitForService(ChatService, chatService =>
+  install(app: TokenRingApp) {
+    app.waitForService(ChatService, chatService =>
       chatService.addTools(packageJSON.name, tools)
     );
-    const websearchConfig = agentTeam.getConfigSlice("websearch", WebSearchConfigSchema);
+    const websearchConfig = app.getConfigSlice("websearch", WebSearchConfigSchema);
 
     if (websearchConfig) {
-      agentTeam.waitForService(WebSearchService, cdnService => {
+      app.waitForService(WebSearchService, cdnService => {
         for (const name in websearchConfig.providers) {
           const provider = websearchConfig.providers[name];
           if (provider.type === "chrome") {
@@ -26,6 +27,6 @@ export default {
       });
     }
   }
-} as TokenRingPackage;
+} as TokenRingPlugin;
 
 export {default as ChromeWebSearchProvider} from "./ChromeWebSearchProvider.ts";

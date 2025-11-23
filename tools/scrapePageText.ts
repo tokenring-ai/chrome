@@ -1,15 +1,10 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingToolDefinition} from "@tokenring-ai/chat/types";
 import puppeteer from "puppeteer";
 import {z} from "zod";
 
 // Exported tool name in the required format
-export const name = "chrome/scrapePageText";
-
-export type ExecuteParams = {
-  url?: string;
-  timeoutSeconds?: number;
-  selector?: string;
-};
+const name = "chrome/scrapePageText";
 
 export type ExecuteResult = {
   text: string;
@@ -17,8 +12,8 @@ export type ExecuteResult = {
   url: string;
 };
 
-export async function execute(
-  {url, timeoutSeconds = 30, selector}: ExecuteParams,
+async function execute(
+  {url, timeoutSeconds = 30, selector}: z.infer<typeof inputSchema>,
   agent: Agent,
 ): Promise<ExecuteResult> {
   // Validate required parameters
@@ -90,10 +85,10 @@ export async function execute(
   }
 }
 
-export const description =
+const description =
   "Scrape text content from a web page using Puppeteer. By default, it prioritizes content from 'article', 'main', or 'body' tags in that order. Returns the extracted text along with the source selector used." as const;
 
-export const inputSchema = z.object({
+const inputSchema = z.object({
   url: z
     .string()
     .describe("The URL of the web page to scrape text from."),
@@ -109,3 +104,7 @@ export const inputSchema = z.object({
     .describe("(Optional) Custom CSS selector to target specific content. If not provided, will use 'article', 'main', or 'body' in that priority order.")
     .optional(),
 });
+
+export default {
+  name, description, inputSchema, execute,
+} as TokenRingToolDefinition<typeof inputSchema>;
