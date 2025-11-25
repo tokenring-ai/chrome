@@ -5,6 +5,7 @@
  "dependencies": {
   "@tokenring-ai/agent": "0.1.0",
   "@tokenring-ai/websearch": "0.1.0",
+  "turndown": "^7.2.2",
   "puppeteer": "^24.31.0"
  },
  "exports": {
@@ -17,7 +18,8 @@
   "build": "tsc -p tsconfig.tson"
  },
  "devDependencies": {
-  "typescript": "^5.9.3"
+  "typescript": "^5.9.3",
+  "@types/turndown": "^5.0.6"
  },
  "type": "module"
 }
