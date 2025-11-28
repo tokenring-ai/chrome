@@ -4,7 +4,7 @@ import {TokenRingPlugin} from "@tokenring-ai/app";
 import {WebSearchConfigSchema, WebSearchService} from "@tokenring-ai/websearch";
 import ChromeWebSearchProvider, {ChromeWebSearchOptionsSchema} from "./ChromeWebSearchProvider.js";
 import packageJSON from './package.json' with {type: 'json'};
-import * as tools from "./tools.ts";
+import tools from "./tools.ts";
 
 export default {
   name: packageJSON.name,
