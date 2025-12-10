@@ -27,6 +27,6 @@ export default {
       });
     }
   }
-} as TokenRingPlugin;
+} satisfies TokenRingPlugin;
 
 export {default as ChromeWebSearchProvider} from "./ChromeWebSearchProvider.ts";
