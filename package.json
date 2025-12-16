@@ -5,11 +5,11 @@
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
     "@tokenring-ai/chat": "0.2.0",
-    "zod": "^4.1.13",
+    "zod": "catalog:",
     "@tokenring-ai/agent": "0.2.0",
     "@tokenring-ai/websearch": "0.2.0",
     "turndown": "^7.2.2",
-    "puppeteer": "^24.32.1"
+    "puppeteer": "^24.33.0"
   },
   "exports": {
     ".": "./index.ts",
@@ -21,7 +21,7 @@
     "build": "tsc -p tsconfig.tson"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "@types/turndown": "^5.0.6"
   },
   "type": "module"
