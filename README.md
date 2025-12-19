@@ -6,9 +6,9 @@ Chrome browser automation utilities for the Token Ring ecosystem, providing web 
 
 This package provides Chrome browser automation utilities for the Token Ring ecosystem. It includes:
 
-- **Web Search Provider**: Chrome-based web and news search functionality
-- **Page Scraping Tool**: Extract text content from web pages
-- **Puppeteer Script Runner**: Execute custom Puppeteer scripts in a managed browser context
+- **Web Search Provider**: Chrome-based web and news search functionality using Puppeteer
+- **Page Scraping Tool**: Extract text content from web pages with intelligent content detection
+- **Automatic Plugin Integration**: Seamless integration with Token Ring applications
 
 ## Installation
 
@@ -20,28 +20,31 @@ npm install @tokenring-ai/chrome
 
 ### Dependencies
 
-- `@tokenring-ai/agent`: ^0.1.0
-- `@tokenring-ai/websearch`: ^0.1.0
-- `puppeteer`: ^24.31.0
+- `@tokenring-ai/app`: ^0.2.0
+- `@tokenring-ai/agent`: ^0.2.0
+- `@tokenring-ai/websearch`: ^0.2.0
+- `@tokenring-ai/chat`: ^0.2.0
+- `puppeteer`: ^24.33.0
 - `turndown`: ^7.2.2
+- `zod`: catalog:
 
 ## Usage
 
 ### As a Token Ring Plugin
 
-The package can be used as a Token Ring plugin that automatically registers tools and web search providers:
+The package automatically integrates with Token Ring applications through its plugin system:
 
 ```typescript
-import { TokenRingApp } from "@tokenring-ai/app";
+import TokenRingApp from "@tokenring-ai/app";
 import chromePlugin from "@tokenring-ai/chrome";
 
 const app = new TokenRingApp();
-app.registerPlugin(chromePlugin);
+// Plugin automatically registers tools and web search providers
 ```
 
 ### Web Search Provider
 
-The ChromeWebSearchProvider enables web and news search functionality using Puppeteer to scrape search results.
+The `ChromeWebSearchProvider` enables web and news search functionality using Puppeteer to scrape Google search results.
 
 #### Configuration
 
@@ -53,7 +56,7 @@ const config = {
     providers: {
       chrome: {
         type: "chrome",
-        launch: true // or false to connect to existing browser
+        launch: true // Launch new browser (true) or connect to existing (false)
       }
     }
   }
@@ -63,32 +66,41 @@ const config = {
 #### Usage
 
 ```typescript
-import { ChromeWebSearchProvider } from "@tokenring-ai/chrome";
+import ChromeWebSearchProvider from "@tokenring-ai/chrome";
 
 const provider = new ChromeWebSearchProvider({
   launch: true
 });
 
-// Search the web
+// Search the web for general results
 const webResults = await provider.searchWeb("TypeScript tutorial");
+console.log(webResults.organic); // Array of search results with title, link, snippet
 
-// Search news
+// Search news articles
 const newsResults = await provider.searchNews("AI technology");
+console.log(newsResults.news); // Array of news articles with title, link, source, date
 
 // Fetch and convert page content to markdown
 const pageContent = await provider.fetchPage("https://example.com");
+console.log(pageContent.markdown); // Markdown-formatted content
 ```
 
-### Tools
+## Tools
 
-#### scrapePageText
+### scrapePageText
 
-Extract text content from web pages using Puppeteer.
+Extract text content from web pages using Puppeteer with intelligent content detection.
 
 **Parameters:**
 - `url` (required): The URL of the web page to scrape
 - `timeoutSeconds` (optional, default: 30): Timeout for the scraping operation (5-180 seconds)
-- `selector` (optional): Custom CSS selector to target specific content. If not provided, uses 'article', 'main', or 'body' in priority order.
+- `selector` (optional): Custom CSS selector to target specific content
+
+**Smart Content Detection:**
+If no custom selector is provided, the tool automatically selects content in this priority order:
+1. `<article>` - Main article content
+2. `<main>` - Main content area
+3. `<body>` - Full page body as fallback
 
 **Usage:**
 ```typescript
@@ -96,43 +108,13 @@ import { scrapePageText } from "@tokenring-ai/chrome/tools";
 
 const result = await scrapePageText.execute({
   url: "https://example.com/article",
-  selector: "article" // Optional
+  timeoutSeconds: 60,
+  selector: "article" // Optional - uses smart detection if not provided
 }, agent);
 
 console.log(result.text); // Extracted text content
 console.log(result.sourceSelector); // Selector used for extraction
 console.log(result.url); // Original URL
-```
-
-#### runPuppeteerScript
-
-Execute custom Puppeteer scripts in a managed browser context.
-
-**Parameters:**
-- `script` (required): A JavaScript code string that evaluates to an async function
-- `navigateTo` (optional): URL to load before executing the script
-- `timeoutSeconds` (optional, default: 30): Maximum execution time (5-180 seconds)
-
-**Usage:**
-```typescript
-import { runPuppeteerScript } from "@tokenring-ai/chrome/tools";
-
-const script = `
-  async ({ page, browser, consoleLog }) => {
-    await page.goto('https://example.com', { waitUntil: 'load' });
-    const title = await page.title();
-    consoleLog('Page title:', title);
-    return { title };
-  }
-`;
-
-const result = await runPuppeteerScript.execute({
-  script,
-  navigateTo: "https://example.com"
-}, agent);
-
-console.log(result.result); // { title: "Example Domain" }
-console.log(result.logs); // ["Page title: Example Domain"]
 ```
 
 ## API Reference
@@ -146,22 +128,143 @@ new ChromeWebSearchProvider(options: ChromeWebSearchOptions)
 ```
 
 **Options:**
-- `launch` (boolean): Whether to launch a new browser instance (true) or connect to existing (false)
+- `launch` (boolean): Whether to launch a new browser instance (true) or connect to existing browser (false)
 
 #### Methods
 
-- `searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult>`
-- `searchNews(query: string, options?: WebSearchProviderOptions): Promise<NewsSearchResult>`
-- `fetchPage(url: string, options?: WebPageOptions): Promise<WebPageResult>`
+**searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult>**
 
-### Tool Definitions
+Search Google for web results and return structured data.
 
-Both tools implement the `TokenRingToolDefinition` interface and provide:
+**searchNews(query: string, options?: WebSearchProviderOptions): Promise<NewsSearchResult>**
 
-- `name`: Tool identifier
-- `description`: Human-readable description
-- `inputSchema`: Zod schema for input validation
-- `execute`: Async execution function
+Search Google News for articles and return structured data.
+
+**fetchPage(url: string, options?: WebPageOptions): Promise<WebPageResult>**
+
+Fetch a web page and convert its content to Markdown format.
+
+#### WebSearchProviderOptions
+
+- `countryCode` (string): Geographic country code for localized results (e.g., "us", "uk")
+
+#### Return Types
+
+**WebSearchResult:**
+```typescript
+{
+  organic: Array<{
+    position: number;
+    title: string;
+    link: string;
+    snippet: string;
+  }>;
+}
+```
+
+**NewsSearchResult:**
+```typescript
+{
+  news: Array<{
+    position: number;
+    title: string;
+    link: string;
+    snippet: string;
+    source: string;
+    date: string;
+  }>;
+}
+```
+
+**WebPageResult:**
+```typescript
+{
+  markdown: string;
+}
+```
+
+### scrapePageText Tool
+
+**Input Schema:**
+```typescript
+{
+  url: string; // Required: URL to scrape
+  timeoutSeconds?: number; // Optional: 5-180 seconds, default 30
+  selector?: string; // Optional: Custom CSS selector
+}
+```
+
+**Output:**
+```typescript
+{
+  text: string; // Extracted text content
+  sourceSelector: string; // CSS selector used
+  url: string; // Original URL
+}
+```
+
+## Browser Management
+
+The package supports two modes of browser operation:
+
+### Launch Mode (launch: true)
+- Automatically launches a new Puppeteer browser instance
+- Best for isolated operations
+- Includes headless browser support
+
+### Connect Mode (launch: false)
+- Connects to an existing Chrome browser instance
+- Better for long-running applications
+- Requires pre-existing browser with remote debugging enabled
+
+## Configuration
+
+### Web Search Configuration
+
+The provider integrates with Token Ring's web search system through configuration:
+
+```typescript
+import { WebSearchConfigSchema } from "@tokenring-ai/websearch";
+import { ChromeWebSearchOptionsSchema } from "@tokenring-ai/chrome";
+
+const websearchConfig = {
+  providers: {
+    myChromeProvider: {
+      type: "chrome",
+      launch: true
+    }
+  }
+};
+```
+
+### Tool Integration
+
+Tools are automatically registered with Token Ring's chat system and can be used directly:
+
+```typescript
+import tools from "@tokenring-ai/chrome/tools";
+
+// Tools are exported for direct use
+export default {
+  scrapePageText,
+};
+```
+
+## Error Handling
+
+The package includes comprehensive error handling:
+
+- **Network timeouts**: Configurable timeout for page operations
+- **Element not found**: Graceful handling when selectors don't match
+- **Browser lifecycle**: Proper cleanup of browser resources
+- **Invalid URLs**: Validation of input URLs
+
+## Performance Considerations
+
+- **Browser startup**: Launch mode includes browser initialization time
+- **Memory usage**: Browser instances should be properly disposed
+- **Network requests**: Consider rate limiting for production use
+- **Content processing**: Markdown conversion adds processing overhead
 
 ## Development
 
@@ -174,6 +277,13 @@ npm run build
 ### Scripts
 
 - `build`: Compile TypeScript with `tsc -p tsconfig.tson`
+
+### Testing
+
+The package includes Vitest configuration for testing:
+- Unit tests for provider methods
+- Integration tests for tool functionality
+- Browser automation tests
 
 ## License
 
