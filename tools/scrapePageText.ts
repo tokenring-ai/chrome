@@ -4,7 +4,7 @@ import puppeteer from "puppeteer";
 import {z} from "zod";
 
 // Exported tool name in the required format
-const name = "chrome/scrapePageText";
+const name = "chrome_scrapePageText";
 
 export type ExecuteResult = {
   text: string;
