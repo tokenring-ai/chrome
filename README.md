@@ -1,6 +1,6 @@
 # @tokenring-ai/chrome
 
-Chrome browser automation utilities for the Token Ring ecosystem, providing web search capabilities and page scraping tools.
+Chrome browser automation utilities for the Token Ring ecosystem, providing web search capabilities, page scraping tools, and Puppeteer script execution.
 
 ## Overview
 
@@ -8,6 +8,7 @@ This package provides Chrome browser automation utilities for the Token Ring eco
 
 - **Web Search Provider**: Chrome-based web and news search functionality using Puppeteer
 - **Page Scraping Tool**: Extract text content from web pages with intelligent content detection
+- **Puppeteer Script Execution**: Run custom JavaScript scripts with full browser access
 - **Automatic Plugin Integration**: Seamless integration with Token Ring applications
 
 ## Installation
@@ -15,7 +16,7 @@ This package provides Chrome browser automation utilities for the Token Ring eco
 This package is part of the monorepo and is typically consumed by the Token Ring runtime. If you need to depend on it directly:
 
 ```bash
-npm install @tokenring-ai/chrome
+bun install @tokenring-ai/chrome
 ```
 
 ### Dependencies
@@ -26,7 +27,7 @@ npm install @tokenring-ai/chrome
 - `@tokenring-ai/chat`: ^0.2.0
 - `puppeteer`: ^24.33.0
 - `turndown`: ^7.2.2
-- `zod`: catalog:
+- `zod`: ^3.22.4
 
 ## Usage
 
@@ -85,9 +86,11 @@ const pageContent = await provider.fetchPage("https://example.com");
 console.log(pageContent.markdown); // Markdown-formatted content
 ```
 
-## Tools
+### Tools
 
-### scrapePageText
+The package exports tools that can be used directly or through the Token Ring chat system:
+
+#### scrapePageText
 
 Extract text content from web pages using Puppeteer with intelligent content detection.
 
@@ -103,6 +106,7 @@ If no custom selector is provided, the tool automatically selects content in thi
 3. `<body>` - Full page body as fallback
 
 **Usage:**
+
 ```typescript
 import { scrapePageText } from "@tokenring-ai/chrome/tools";
 
@@ -115,6 +119,45 @@ const result = await scrapePageText.execute({
 console.log(result.text); // Extracted text content
 console.log(result.sourceSelector); // Selector used for extraction
 console.log(result.url); // Original URL
+```
+
+#### runPuppeteerScript
+
+Run custom JavaScript scripts with full access to a Puppeteer browser instance.
+
+**Parameters:**
+- `script` (required): JavaScript code string to execute
+- `navigateTo` (optional): URL to navigate to before executing the script
+- `timeoutSeconds` (optional, default: 30): Script execution timeout (5-180 seconds)
+
+**Usage:**
+
+```typescript
+import { runPuppeteerScript } from "@tokenring-ai/chrome/tools";
+
+const result = await runPuppeteerScript.execute({
+  script: `
+    return async ({ page, browser, consoleLog }) => {
+      consoleLog("Starting script...");
+      
+      // Navigate to a page if specified
+      if (navigateTo) {
+        await page.goto(navigateTo);
+      }
+      
+      // Example: extract page title
+      const title = await page.title();
+      consoleLog("Page title:", title);
+      
+      return { title };
+    }
+  `,
+  navigateTo: "https://example.com",
+  timeoutSeconds: 60
+}, agent);
+
+console.log(result.result); // Script return value
+console.log(result.logs); // Array of console logs
 ```
 
 ## API Reference
@@ -203,6 +246,37 @@ Fetch a web page and convert its content to Markdown format.
 }
 ```
 
+### runPuppeteerScript Tool
+
+**Input Schema:**
+```typescript
+{
+  script: string; // Required: JavaScript code to execute
+  navigateTo?: string; // Optional: URL to navigate to
+  timeoutSeconds?: number; // Optional: 5-180 seconds, default 30
+}
+```
+
+**Output:**
+```typescript
+{
+  result: unknown; // Return value from the script
+  logs: string[]; // Array of console logs
+}
+```
+
+## Package Structure
+
+The package includes the following files:
+
+- `index.ts`: Main export file
+- `ChromeWebSearchProvider.ts`: Core web search provider implementation
+- `tools.ts`: Tool exports and definitions
+- `tools/scrapePageText.ts`: Page scraping tool implementation
+- `tools/runPuppeteerScript.ts`: Puppeteer script execution tool
+- `plugin.ts`: Plugin integration for Token Ring applications
+- `vitest.config.ts`: Testing configuration
+
 ## Browser Management
 
 The package supports two modes of browser operation:
@@ -211,11 +285,13 @@ The package supports two modes of browser operation:
 - Automatically launches a new Puppeteer browser instance
 - Best for isolated operations
 - Includes headless browser support
+- Each operation gets a fresh browser instance
 
 ### Connect Mode (launch: false)
 - Connects to an existing Chrome browser instance
 - Better for long-running applications
 - Requires pre-existing browser with remote debugging enabled
+- More efficient for multiple operations
 
 ## Configuration
 
@@ -258,6 +334,8 @@ The package includes comprehensive error handling:
 - **Element not found**: Graceful handling when selectors don't match
 - **Browser lifecycle**: Proper cleanup of browser resources
 - **Invalid URLs**: Validation of input URLs
+- **Script errors**: Detailed error messages with context
+- **Memory management**: Automatic browser instance cleanup
 
 ## Performance Considerations
 
@@ -265,18 +343,22 @@ The package includes comprehensive error handling:
 - **Memory usage**: Browser instances should be properly disposed
 - **Network requests**: Consider rate limiting for production use
 - **Content processing**: Markdown conversion adds processing overhead
+- **Script execution**: Custom scripts can have varying performance impacts
 
 ## Development
 
 ### Build
 
 ```bash
-npm run build
+bun run build
 ```
 
 ### Scripts
 
-- `build`: Compile TypeScript with `tsc -p tsconfig.tson`
+- `build`: Compile TypeScript with `tsc --noEmit`
+- `test`: Run Vitest tests
+- `test:watch`: Watch mode for testing
+- `test:coverage`: Run tests with coverage report
 
 ### Testing
 
@@ -284,6 +366,7 @@ The package includes Vitest configuration for testing:
 - Unit tests for provider methods
 - Integration tests for tool functionality
 - Browser automation tests
+- Error handling scenarios
 
 ## License
 
