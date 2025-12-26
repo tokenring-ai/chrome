@@ -9,7 +9,7 @@
     "@tokenring-ai/agent": "0.2.0",
     "@tokenring-ai/websearch": "0.2.0",
     "turndown": "^7.2.2",
-    "puppeteer": "^24.33.0"
+    "puppeteer": "^24.34.0"
   },
   "exports": {
     ".": "./index.ts",
