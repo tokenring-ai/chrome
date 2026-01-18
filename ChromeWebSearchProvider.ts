@@ -1,14 +1,13 @@
 import WebSearchProvider, {
+  type NewsSearchResult,
   type WebPageOptions,
   type WebPageResult,
   type WebSearchProviderOptions,
-  type WebSearchResult,
-  type NewsSearchResult
+  type WebSearchResult
 } from "@tokenring-ai/websearch/WebSearchProvider";
 import puppeteer, {ConnectOptions, LaunchOptions} from "puppeteer";
 import TurndownService from "turndown";
 import {z} from "zod";
-
 
 export default class ChromeWebSearchProvider extends WebSearchProvider {
   private readonly options: ChromeWebSearchOptions;
