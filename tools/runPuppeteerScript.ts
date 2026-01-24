@@ -5,6 +5,7 @@ import {z} from "zod";
 
 // Exported tool name in the required format
 const name = "chrome_runPuppeteerScript";
+const displayName = "Chrome/runPuppeteerScript";
 
 export type ExecuteResult = {
   result: unknown;
@@ -103,5 +104,5 @@ const inputSchema = z.object({
 });
 
 export default {
-  name, description, inputSchema, execute,
+  name, displayName, description, inputSchema, execute,
 } satisfies TokenRingToolDefinition<typeof inputSchema>;

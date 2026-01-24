@@ -5,6 +5,7 @@ import {z} from "zod";
 
 // Exported tool name in the required format
 const name = "chrome_scrapePageText";
+const displayName = "Chrome/scrapePageText";
 
 export type ExecuteResult = {
   text: string;
@@ -106,5 +107,5 @@ const inputSchema = z.object({
 });
 
 export default {
-  name, description, inputSchema, execute,
+  name, displayName, description, inputSchema, execute,
 } satisfies TokenRingToolDefinition<typeof inputSchema>;
