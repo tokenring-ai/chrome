@@ -1,7 +1,7 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {TokenRingToolDefinition} from "@tokenring-ai/chat/schema";
-import puppeteer from "puppeteer";
+import {TokenRingToolDefinition, type TokenRingToolJSONResult} from "@tokenring-ai/chat/schema";
 import {z} from "zod";
+import ChromeService from "../ChromeService.ts";
 
 const name = "chrome_scrapePageMetadata";
 const displayName = "Chrome/scrapePageMetadata";
@@ -13,14 +13,15 @@ export type ExecuteResult = {
 };
 
 async function execute(
-  {url, timeoutSeconds = 30}: z.infer<typeof inputSchema>,
+  {url, timeoutSeconds = 30}: z.output<typeof inputSchema>,
   agent: Agent,
-): Promise<ExecuteResult> {
+): Promise<TokenRingToolJSONResult<any>> {
   if (!url) {
     throw new Error(`[${name}] url is required`);
   }
 
-  const browser = await puppeteer.launch({headless: true});
+  const chromeService = agent.requireServiceByType(ChromeService);
+  const browser = await chromeService.getBrowser(agent);
   const page = await browser.newPage();
 
   let timeout: NodeJS.Timeout | undefined;
@@ -61,14 +62,20 @@ async function execute(
       });
 
       return {
-        headHtml,
-        jsonLd
+        type: "json",
+        data: {
+          headHtml,
+          jsonLd
+        }
       };
     });
 
     return {
-      ...metadata,
-      url,
+      type: "json",
+      data: {
+        ...metadata,
+        url,
+      }
     };
 
   } catch (err: any) {

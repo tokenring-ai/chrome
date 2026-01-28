@@ -13,14 +13,9 @@ export type ExecuteResult = {
 };
 
 async function execute(
-  {script, navigateTo, timeoutSeconds = 30}: z.infer<typeof inputSchema>,
+  {script, navigateTo, timeoutSeconds = 30}: z.output<typeof inputSchema>,
   _agent: Agent,
-): Promise<ExecuteResult> {
-  // Validate required parameters
-  if (!script) {
-    throw new Error(`[${name}] script is required`);
-  }
-
+) {
   // Launch Puppeteer browser (headless mode can be adjusted as needed)
   const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
@@ -75,10 +70,7 @@ async function execute(
   }
 
   // Return successful execution result
-  return {
-    result,
-    logs,
-  };
+  return { type: 'json' as const, data: { result, logs } };
 }
 
 const description =

@@ -1,9 +1,9 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {TokenRingToolDefinition} from "@tokenring-ai/chat/schema";
-import puppeteer from "puppeteer";
+import {TokenRingToolDefinition, type TokenRingToolTextResult} from "@tokenring-ai/chat/schema";
+import TurndownService from "turndown";
 import {z} from "zod";
+import ChromeService from "../ChromeService.ts";
 
-// Exported tool name in the required format
 const name = "chrome_scrapePageText";
 const displayName = "Chrome/scrapePageText";
 
@@ -14,75 +14,26 @@ export type ExecuteResult = {
 };
 
 async function execute(
-  {url, timeoutSeconds = 30, selector}: z.infer<typeof inputSchema>,
+  {url, timeoutSeconds = 30, selector}: z.output<typeof inputSchema>,
   agent: Agent,
-): Promise<ExecuteResult> {
-  // Validate required parameters
-  if (!url) {
-    throw new Error(`[${name}] url is required`);
-  }
-
-  // Launch Puppeteer browser
-  const browser = await puppeteer.launch({headless: true});
+): Promise<TokenRingToolTextResult> {
+  const chromeService = agent.requireServiceByType(ChromeService);
+  const browser = await chromeService.getBrowser(agent);
   const page = await browser.newPage();
 
-  let timeout: NodeJS.Timeout | undefined;
   try {
-    // Navigate to the page
-    await page.goto(url, {waitUntil: "domcontentloaded", timeout: 20000});
+    await page.goto(url, {waitUntil: 'domcontentloaded', timeout: timeoutSeconds * 1000});
 
-    // Define selectors in priority order
-    const defaultSelectors = ["article", "main", "body"];
-    let targetSelector = selector;
-    let sourceSelector = selector || "custom";
+    const html = await page.content();
 
-    // If no custom selector provided, find the best available selector
-    if (!targetSelector) {
-      for (const sel of defaultSelectors) {
-        const element = await page.$(sel);
-        if (element) {
-          targetSelector = sel;
-          sourceSelector = sel;
-          break;
-        }
-      }
-
-      // Fallback to body if nothing else found
-      if (!targetSelector) {
-        targetSelector = "body";
-        sourceSelector = "body";
-      }
-    }
-
-    // Enforce timeout
-    timeout = setTimeout(() => {
-      throw new Error("Scraping timed out");
-    }, Math.max(5, Math.min(timeoutSeconds, 180)) * 1000);
-
-    // Extract text content from the selected element
-    const text = await page.evaluate((sel) => {
-      const element = document.querySelector(sel);
-      if (!element) {
-        throw new Error(`Element with selector "${sel}" not found`);
-      }
-
-      // Get text content and clean it up
-      return element.textContent
-        ?.replace(/\s+/g, " ") // Replace multiple whitespace with single space
-        ?.trim() || "";
-    }, targetSelector);
-
+    const turndownService = new TurndownService();
     return {
-      text,
-      sourceSelector,
-      url,
+      type: 'text',
+      text: turndownService.turndown(html)
     };
-
-  } catch (err: any) {
-    throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
-    if (timeout) clearTimeout(timeout);
-    await browser.close();
+    await page.close();
+    await browser.disconnect();
   }
 }
 

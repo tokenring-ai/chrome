@@ -1,3 +1,4 @@
+import Agent from "@tokenring-ai/agent/Agent";
 import WebSearchProvider, {
   type NewsSearchResult,
   type WebPageOptions,
@@ -5,20 +6,17 @@ import WebSearchProvider, {
   type WebSearchProviderOptions,
   type WebSearchResult
 } from "@tokenring-ai/websearch/WebSearchProvider";
-import puppeteer, {ConnectOptions, LaunchOptions} from "puppeteer";
 import TurndownService from "turndown";
-import {z} from "zod";
+import ChromeService from "./ChromeService.ts";
 
 export default class ChromeWebSearchProvider extends WebSearchProvider {
-  private readonly options: ChromeWebSearchOptions;
-
-  constructor(options: ChromeWebSearchOptions) {
+  constructor(private chromeService: ChromeService) {
     super();
-    this.options = options;
   }
 
-  async searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult> {
-    let browser = await this.getBrowser();
+  async searchWeb(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<WebSearchResult> {
+    if (!agent) throw new Error("Agent required for ChromeWebSearchProvider");
+    let browser = await this.chromeService.getBrowser(agent);
 
     const page = await browser.newPage();
 
@@ -47,8 +45,9 @@ export default class ChromeWebSearchProvider extends WebSearchProvider {
     }
   }
 
-  async searchNews(query: string, options?: WebSearchProviderOptions): Promise<NewsSearchResult> {
-    const browser = await this.getBrowser();
+  async searchNews(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<NewsSearchResult> {
+    if (!agent) throw new Error("Agent required for ChromeWebSearchProvider");
+    const browser = await this.chromeService.getBrowser(agent);
     const page = await browser.newPage();
 
     try {
@@ -119,8 +118,9 @@ export default class ChromeWebSearchProvider extends WebSearchProvider {
   }
 
 
-  async fetchPage(url: string, options?: WebPageOptions): Promise<WebPageResult> {
-    const browser = await this.getBrowser();
+  async fetchPage(url: string, options?: WebPageOptions, agent?: Agent): Promise<WebPageResult> {
+    if (!agent) throw new Error("Agent required for ChromeWebSearchProvider");
+    const browser = await this.chromeService.getBrowser(agent);
     const page = await browser.newPage();
 
     try {
@@ -138,16 +138,4 @@ export default class ChromeWebSearchProvider extends WebSearchProvider {
     }
   }
 
-  private async getBrowser() {
-    if (this.options.launch) {
-      return await puppeteer.launch(this.options as LaunchOptions);
-    } else {
-      return await puppeteer.connect(this.options as ConnectOptions);
-    }
-  }
 }
-export const ChromeWebSearchOptionsSchema = z.looseObject({
-  launch: z.boolean(),
-});
-
-export type ChromeWebSearchOptions = z.infer<typeof ChromeWebSearchOptionsSchema>;
