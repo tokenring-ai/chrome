@@ -7,13 +7,10 @@ import {ChromeAgentConfigSchema, ChromeConfigSchema} from "./schema.ts";
 import {ChromeState} from "./state/chromeState.ts";
 
 export default class ChromeService implements TokenRingService {
-  name = "ChromeService";
+  readonly name = "ChromeService";
   description = "Chrome browser automation service";
 
   constructor(private options: z.output<typeof ChromeConfigSchema>) {}
-
-  run(): void {}
-
   attach(agent: Agent): void {
     const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice('chrome', ChromeAgentConfigSchema));
     agent.initializeState(ChromeState, config);

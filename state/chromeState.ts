@@ -11,7 +11,7 @@ const serializationSchema = z.object({
 });
 
 export class ChromeState implements AgentStateSlice<typeof serializationSchema> {
-  name = "ChromeState";
+  readonly name = "ChromeState";
   serializationSchema = serializationSchema;
   
   launch: boolean;
