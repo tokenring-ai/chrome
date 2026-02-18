@@ -18,6 +18,7 @@ The `@tokenring-ai/chrome` package offers Chrome browser automation through Pupp
 - Selenium-like selector-based content retrieval
 - Support for rendered and non-rendered page fetching
 - Agent state management for browser configuration
+- Custom Puppeteer script execution tool
 
 ## Installation
 
@@ -98,7 +99,7 @@ const chromeService = new ChromeService({
 attach(agent: Agent): void
 ```
 
-Attaches the ChromeService to an agent, merging configuration and initializing state.
+Attaches the ChromeService to an agent, merging configuration and initializing state using deepMerge from @tokenring-ai/utility.
 
 ```typescript
 async getBrowser(agent: Agent): Promise<Browser>
@@ -108,38 +109,6 @@ Manages browser lifecycle based on configuration:
 - If `launch: true`: Creates new Puppeteer browser instance
 - If `launch: false`: Connects to existing browser session via WebSocket endpoint
 - Returns browser instance for the operation
-
-### ChromeWebSearchProvider
-
-Main provider implementation extending `WebSearchProvider` from `@tokenring-ai/websearch`. Handles browser automation for search and content retrieval.
-
-**Class Definition:**
-
-```typescript
-import ChromeWebSearchProvider from "@tokenring-ai/chrome";
-
-const provider = new ChromeWebSearchProvider(chromeService);
-```
-
-**Public Methods:**
-
-```typescript
-async searchWeb(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<WebSearchResult>
-```
-
-Performs Google web search via Puppeteer browser. Returns organic search results with title, link, and snippet in order of appearance. Supports countryCode parameter. Uses `[data-ved] h3` selectors for results and `[data-sncf]` for snippets. Browser launched and disconnected per request.
-
-```typescript
-async searchNews(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<NewsSearchResult>
-```
-
-Performs Google News search via Puppeteer browser. Returns array of news articles with metadata. Parses article containers using `[data-news-doc-id]` attribute. Extracts title, snippet, source, and date from page elements. Browser launched and disconnected per request.
-
-```typescript
-async fetchPage(url: string, options?: WebPageOptions, agent?: Agent): Promise<WebPageResult>
-```
-
-Scrapes web page content using Puppeteer browser. Converts HTML to Markdown using TurndownService. Supports rendered and non-rendered fetching via `render` option - `true` waits for `networkidle0`, `false` waits for `domcontentloaded`. Browser launched and disconnected per request.
 
 ### ChromeState
 
@@ -184,6 +153,38 @@ show(): string[]
 ```
 
 Returns a formatted string representation of the state.
+
+### ChromeWebSearchProvider
+
+Main provider implementation extending `WebSearchProvider` from `@tokenring-ai/websearch`. Handles browser automation for search and content retrieval.
+
+**Class Definition:**
+
+```typescript
+import ChromeWebSearchProvider from "@tokenring-ai/chrome";
+
+const provider = new ChromeWebSearchProvider(chromeService);
+```
+
+**Public Methods:**
+
+```typescript
+async searchWeb(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<WebSearchResult>
+```
+
+Performs Google web search via Puppeteer browser. Returns organic search results with title, link, and snippet in order of appearance. Supports countryCode parameter. Uses `[data-ved] h3` selectors for results and `[data-sncf]` for snippets. Browser launched and disconnected per request.
+
+```typescript
+async searchNews(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<NewsSearchResult>
+```
+
+Performs Google News search via Puppeteer browser. Returns array of news articles with metadata. Parses article containers using `[data-news-doc-id]` attribute. Extracts title, snippet, source, and date from page elements. Browser launched and disconnected per request.
+
+```typescript
+async fetchPage(url: string, options?: WebPageOptions, agent?: Agent): Promise<WebPageResult>
+```
+
+Scrapes web page content using Puppeteer browser. Converts HTML to Markdown using TurndownService. Supports rendered and non-rendered fetching via `render` option - `true` waits for `networkidle0`, `false` waits for `domcontentloaded`. Browser launched and disconnected per request.
 
 ## Tools
 
@@ -293,6 +294,87 @@ await agent.callTool("chrome_takeScreenshot", {
   screenWidth: 1024
 });
 ```
+
+### runPuppeteerScript
+
+Execute custom Puppeteer scripts with access to page and browser instances.
+
+**Tool Definition:**
+
+```typescript
+{
+  name: "chrome_runPuppeteerScript",
+  displayName: "Chrome/runPuppeteerScript",
+  description: "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result.",
+  inputSchema: {
+    script: string,
+    navigateTo?: string,
+    timeoutSeconds?: number
+  }
+}
+```
+
+**Parameters:**
+
+- `script` (required): JavaScript code string to run. It should export or define an async function to be called with ({ page, browser, consoleLog }) as arguments. The return value will be returned as output.
+- `navigateTo` (optional): Page URL to navigate to before executing the script
+- `timeoutSeconds` (optional): Timeout for script execution (default 30s, max 180s)
+
+**Output:** Returns result object with result and logs arrays
+
+**Usage Example:**
+
+```typescript
+await agent.callTool("chrome_runPuppeteerScript", {
+  script: `(async ({ page, browser, consoleLog }) => {
+    consoleLog('Starting Puppeteer script...');
+    await page.goto('https://example.com');
+    const title = await page.title();
+    consoleLog('Page title:', title);
+    return { title, success: true };
+  })`,
+  navigateTo: 'https://example.com',
+  timeoutSeconds: 30
+});
+```
+
+## Services
+
+The package provides the following service implementation:
+
+### ChromeService
+
+The `ChromeService` class implements the `TokenRingService` interface and provides browser lifecycle management for Puppeteer automation.
+
+**Interface:**
+
+```typescript
+interface TokenRingService {
+  name: string;
+  description: string;
+  attach(agent: Agent): void;
+}
+```
+
+**Implementation Details:**
+
+- `name`: "ChromeService"
+- `description`: "Chrome browser automation service"
+- `attach()`: Merges default configuration with agent-specific configuration using deepMerge from @tokenring-ai/utility
+
+## Providers
+
+The package provides the following provider implementations:
+
+### ChromeWebSearchProvider
+
+The `ChromeWebSearchProvider` class extends `WebSearchProvider` from @tokenring-ai/websearch and implements search functionality using Chrome/Puppeteer.
+
+**Key Methods:**
+
+- `searchWeb()`: Performs Google web search via DOM parsing
+- `searchNews()`: Performs Google News search with article metadata extraction
+- `fetchPage()`: Scrapes web page content with HTML to Markdown conversion
 
 ## Usage Examples
 
@@ -417,6 +499,23 @@ import fs from 'fs';
 fs.writeFileSync('screenshot.png', screenshot.data, 'base64');
 ```
 
+### Custom Puppeteer Script Execution
+
+```typescript
+const result = await agent.callTool("chrome_runPuppeteerScript", {
+  script: `(async ({ page, browser, consoleLog }) => {
+    await page.goto('https://example.com');
+    const elements = await page.$$eval('a', links => links.map(link => link.href));
+    consoleLog('Found', elements.length, 'links');
+    return { links: elements };
+  })`,
+  timeoutSeconds: 30
+});
+
+console.log('Result:', result.data.result);
+console.log('Logs:', result.data.logs);
+```
+
 ## Plugin Integration
 
 ### TokenRing Plugin Registration
@@ -515,7 +614,8 @@ The package depends on the following core packages:
 - `@tokenring-ai/chat` - Chat service and tool definitions
 - `@tokenring-ai/agent` - Agent framework for tool execution
 - `@tokenring-ai/websearch` - Base WebSearchProvider and result types
-- `puppeteer` ^24.35.0 - Headless Chrome browser automation
+- `@tokenring-ai/utility` - Utility functions for deep merging
+- `puppeteer` ^24.37.3 - Headless Chrome browser automation
 - `turndown` ^7.2.2 - HTML to Markdown conversion
 - `zod` - Runtime type validation
 
@@ -606,6 +706,13 @@ The package provides robust error handling for browser operations:
 2. **Full page capture**: Use fullPage: true in Puppeteer for complete page screenshots
 3. **Base64 handling**: Screenshot data is base64 encoded, handle appropriately for your use case
 
+### Custom Script Execution
+
+1. **Clean script structure**: Write scripts that properly clean up after themselves
+2. **Error handling**: Use try-catch blocks within scripts
+3. **Console logging**: Use provided consoleLog function to capture debug output
+4. **Timeouts**: Set appropriate timeouts for complex operations
+
 ## Testing
 
 The package uses vitest for unit testing:
@@ -656,7 +763,8 @@ pkg/chrome/
 ├── tools/
 │   ├── scrapePageText.ts    # Web scraping tool implementation
 │   ├── scrapePageMetadata.ts # Metadata extraction tool implementation
-│   └── takeScreenshot.ts    # Screenshot capture tool implementation
+│   ├── takeScreenshot.ts    # Screenshot capture tool implementation
+│   └── runPuppeteerScript.ts # Custom script execution tool implementation
 ├── vitest.config.ts         # Test configuration
 ├── package.json             # Package metadata and dependencies
 └── README.md                # This documentation
@@ -717,6 +825,20 @@ pkg/chrome/
 - Verify URL is accessible
 - Check viewport dimensions are valid
 - Ensure page loads completely before screenshot
+
+### Custom Script Execution
+
+**Script execution failed**
+
+- Ensure script returns a value
+- Check syntax and import statements
+- Use consoleLog for debugging output
+
+**Timeout errors**
+
+- Increase timeoutSeconds parameter
+- Optimize script execution time
+- Check network conditions
 
 ## Related Components
 
