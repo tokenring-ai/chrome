@@ -2,6 +2,7 @@ import Agent from "@tokenring-ai/agent/Agent";
 import {TokenRingToolDefinition, type TokenRingToolMediaResult} from "@tokenring-ai/chat/schema";
 import {z} from "zod";
 import ChromeService from "../ChromeService.ts";
+import {ChromeState} from "../state/chromeState.ts";
 
 const name = "chrome_takeScreenshot";
 const displayName = "Chrome/takeScreenshot";
@@ -11,14 +12,16 @@ async function execute(
   agent: Agent,
 ): Promise<TokenRingToolMediaResult> {
   const chromeService = agent.requireServiceByType(ChromeService);
+  const config = agent.getState(ChromeState);
   const browser = await chromeService.getBrowser(agent);
   const page = await browser.newPage();
 
+  const height = Math.floor(config.screenshot.maxPixels / screenWidth);
   try {
     // Set the viewport size
     await page.setViewport({
       width: screenWidth,
-      height: 768, // Default height, will capture full page if needed but typically 1:1 view is fine
+      height,
       deviceScaleFactor: 1,
     });
 
@@ -29,7 +32,7 @@ async function execute(
     const screenshotBase64 = await page.screenshot({
       encoding: "base64",
       type: "png",
-      fullPage: false // Captures the current viewport
+      fullPage: false,
     });
 
     return {

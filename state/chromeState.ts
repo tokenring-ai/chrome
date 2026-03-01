@@ -5,25 +5,32 @@ import {ChromeConfigSchema} from "../schema.ts";
 
 const serializationSchema = z.object({
   launch: z.boolean(),
-  headless: z.boolean().optional(),
+  headless: z.boolean(),
   browserWSEndpoint: z.string().optional(),
   executablePath: z.string().optional(),
+  screenshot: z.object({
+    maxPixels: z.number()
+  })
 });
 
 export class ChromeState implements AgentStateSlice<typeof serializationSchema> {
   readonly name = "ChromeState";
   serializationSchema = serializationSchema;
-  
+
   launch: boolean;
-  headless?: boolean;
+  headless: boolean;
   browserWSEndpoint?: string;
   executablePath?: string;
+  screenshot: {
+    maxPixels: number;
+  };
 
   constructor(readonly initialConfig: z.output<typeof ChromeConfigSchema>["agentDefaults"]) {
     this.launch = initialConfig.launch;
     this.headless = initialConfig.headless;
     this.browserWSEndpoint = initialConfig.browserWSEndpoint;
     this.executablePath = initialConfig.executablePath;
+    this.screenshot = { ... initialConfig.screenshot };
   }
 
   reset(what: ResetWhat[]): void {}
@@ -34,6 +41,7 @@ export class ChromeState implements AgentStateSlice<typeof serializationSchema> 
       headless: this.headless,
       browserWSEndpoint: this.browserWSEndpoint,
       executablePath: this.executablePath,
+      screenshot: this.screenshot,
     };
   }
 
@@ -42,6 +50,7 @@ export class ChromeState implements AgentStateSlice<typeof serializationSchema> 
     this.headless = data.headless;
     this.browserWSEndpoint = data.browserWSEndpoint;
     this.executablePath = data.executablePath;
+    this.screenshot = data.screenshot;
   }
 
   show(): string[] {

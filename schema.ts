@@ -5,7 +5,10 @@ export const ChromeAgentConfigSchema = z.object({
   headless: z.boolean().optional(),
   browserWSEndpoint: z.string().optional(),
   executablePath: z.string().optional(),
-}).strict().default({});
+  screenshot: z.object({
+    maxPixels: z.number().optional(),
+  }).optional(),
+}).default({});
 
 export const ChromeConfigSchema = z.object({
   agentDefaults: z.object({
@@ -13,9 +16,8 @@ export const ChromeConfigSchema = z.object({
     headless: z.boolean().default(true),
     browserWSEndpoint: z.string().optional(),
     executablePath: z.string().optional(),
-  }),
-}).strict();
-
-export type ChromeAgentConfig = {
-  chrome: z.input<typeof ChromeAgentConfigSchema>
-};
+    screenshot: z.object({
+      maxPixels: z.number().default(1000000),
+    }).prefault({}),
+  }).prefault({}),
+})

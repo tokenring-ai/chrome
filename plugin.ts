@@ -9,7 +9,7 @@ import {ChromeConfigSchema} from "./schema.ts";
 import tools from "./tools.ts";
 
 const packageConfigSchema = z.object({
-  chrome: ChromeConfigSchema.optional(),
+  chrome: ChromeConfigSchema.prefault({}),
 });
 
 export default {
@@ -20,18 +20,15 @@ export default {
     app.waitForService(ChatService, chatService =>
       chatService.addTools(tools)
     );
+    const chromeService = new ChromeService(config.chrome);
+    app.addServices(chromeService);
 
-    if (config.chrome) {
-      const chromeService = new ChromeService(config.chrome);
-      app.addServices(chromeService);
-
-      app.waitForService(WebSearchService, websearchService => {
-        websearchService.registerProvider(
-          'chrome',
-          new ChromeWebSearchProvider(chromeService)
-        );
-      });
-    }
+    app.waitForService(WebSearchService, websearchService => {
+      websearchService.registerProvider(
+        'chrome',
+        new ChromeWebSearchProvider(chromeService)
+      );
+    });
   },
   config: packageConfigSchema
 } satisfies TokenRingPlugin<typeof packageConfigSchema>;
