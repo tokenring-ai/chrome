@@ -15,7 +15,6 @@ The `@tokenring-ai/chrome` package offers Chrome browser automation through Pupp
 - Page metadata extraction including JSON-LD structured data
 - Visual screenshot capture with configurable viewport dimensions
 - Browser lifecycle management (launch vs connect)
-- Selenium-like selector-based content retrieval
 - Support for rendered and non-rendered page fetching
 - Agent state management for browser configuration
 - Custom Puppeteer script execution tool
@@ -172,7 +171,7 @@ show(): string[]
 Returns a formatted string representation of the state.
 
 ```typescript
-reset(what: ResetWhat[]): void
+reset(): void
 ```
 
 Reset state (currently no-op).
@@ -435,7 +434,7 @@ The `ChromeWebSearchProvider` class extends `WebSearchProvider` from `@tokenring
 
 ```typescript
 import ChromeWebSearchProvider from "@tokenring-ai/chrome";
-import ChromeService from "@tokenring-ai/chrome/ChromeService";
+import ChromeService from "@tokenring-ai/chrome";
 
 const chromeService = new ChromeService({
   agentDefaults: {

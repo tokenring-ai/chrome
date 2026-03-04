@@ -1,4 +1,3 @@
-import type {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
 import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {ChromeConfigSchema} from "../schema.ts";
@@ -33,7 +32,7 @@ export class ChromeState implements AgentStateSlice<typeof serializationSchema> 
     this.screenshot = { ... initialConfig.screenshot };
   }
 
-  reset(what: ResetWhat[]): void {}
+  reset(): void {}
 
   serialize(): z.output<typeof serializationSchema> {
     return {
