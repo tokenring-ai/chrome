@@ -1,4 +1,4 @@
-import type {AgentStateSlice} from "@tokenring-ai/agent/types";
+import {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {ChromeConfigSchema} from "../schema.ts";
 
@@ -12,10 +12,7 @@ const serializationSchema = z.object({
   })
 });
 
-export class ChromeState implements AgentStateSlice<typeof serializationSchema> {
-  readonly name = "ChromeState";
-  serializationSchema = serializationSchema;
-
+export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
   launch: boolean;
   headless: boolean;
   browserWSEndpoint?: string;
@@ -25,6 +22,7 @@ export class ChromeState implements AgentStateSlice<typeof serializationSchema> 
   };
 
   constructor(readonly initialConfig: z.output<typeof ChromeConfigSchema>["agentDefaults"]) {
+    super("ChromeState", serializationSchema);
     this.launch = initialConfig.launch;
     this.headless = initialConfig.headless;
     this.browserWSEndpoint = initialConfig.browserWSEndpoint;
