@@ -168,7 +168,7 @@ Restores state from serialized data.
 show(): string[]
 ```
 
-Returns a formatted string representation of the state.
+Returns a formatted string representation of the state (launch, headless, browserWSEndpoint, executablePath).
 
 ```typescript
 reset(): void
@@ -212,7 +212,7 @@ Scrapes web page content using Puppeteer browser. Converts HTML to Markdown usin
 
 The package provides the following tools for agent use:
 
-### scrapePageText
+### chrome_scrapePageText
 
 Web page text scraping tool that converts entire page content to Markdown.
 
@@ -251,10 +251,11 @@ await agent.callTool("chrome_scrapePageText", {
 **Implementation Notes:**
 
 - Loads the entire page and converts all content to Markdown using TurndownService
-- Waits for `domcontentloaded` event before extracting content
+- Waits for `domcontentloaded` event before extracting content (not `networkidle0`)
 - Browser is disconnected after each operation
+- Uses ChromeService for browser management
 
-### scrapePageMetadata
+### chrome_scrapePageMetadata
 
 Extracts metadata from web pages including HTML head and JSON-LD structured data.
 
@@ -293,9 +294,10 @@ await agent.callTool("chrome_scrapePageMetadata", {
 - Clones the `<head>` element and removes content from `<style>` and `<script>` tags (except JSON-LD)
 - Extracts all JSON-LD blocks and parses them as JSON
 - Returns structured metadata for SEO analysis
-- Browser is closed after operation completion
+- Browser is **closed** (not disconnected) after operation completion
+- Uses ChromeService for browser management
 
-### takeScreenshot
+### chrome_takeScreenshot
 
 Captures visual screenshots of web pages with configurable viewport dimensions.
 
@@ -333,11 +335,12 @@ await agent.callTool("chrome_takeScreenshot", {
 
 - Calculates viewport height based on `screenshot.maxPixels` configuration: `height = maxPixels / screenWidth`
 - Sets viewport with `deviceScaleFactor: 1`
-- Waits for `networkidle2` before capturing screenshot
+- Waits for `networkidle2` before capturing screenshot (not `networkidle0`)
 - Captures only the visible viewport (not full page)
-- Browser is closed after operation completion
+- Browser is **closed** (not disconnected) after operation completion
+- Uses ChromeService for browser management
 
-### runPuppeteerScript
+### chrome_runPuppeteerScript
 
 Execute custom Puppeteer scripts with access to page and browser instances.
 
@@ -382,11 +385,12 @@ await agent.callTool("chrome_runPuppeteerScript", {
 
 **Implementation Details:**
 
-- Launches browser with `headless: false` by default (visible browser)
+- **Launches its own browser** with `headless: false` by default (visible browser) - does NOT use ChromeService
 - Provides `consoleLog` function for capturing script output
 - Listens to browser console events and captures them in logs
 - Enforces timeout on script execution
 - Browser is closed after operation completion
+- **Note:** This tool operates independently of the ChromeService and agent configuration
 
 ## Services
 
@@ -648,12 +652,12 @@ app.install(chromePlugin, {
 
 The package depends on the following core packages:
 
-- `@tokenring-ai/app` - Application framework and plugin system
-- `@tokenring-ai/chat` - Chat service and tool definitions
-- `@tokenring-ai/agent` - Agent framework for tool execution
-- `@tokenring-ai/websearch` - Base WebSearchProvider and result types
-- `@tokenring-ai/utility` - Utility functions for deep merging
-- `puppeteer` ^24.37.5 - Headless Chrome browser automation
+- `@tokenring-ai/app` ^0.2.0 - Application framework and plugin system
+- `@tokenring-ai/chat` ^0.2.0 - Chat service and tool definitions
+- `@tokenring-ai/agent` ^0.2.0 - Agent framework for tool execution
+- `@tokenring-ai/websearch` ^0.2.0 - Base WebSearchProvider and result types
+- `@tokenring-ai/utility` ^0.2.0 - Utility functions for deep merging
+- `puppeteer` ^24.38.0 - Headless Chrome browser automation
 - `turndown` ^7.2.2 - HTML to Markdown conversion
 - `zod` ^4.3.6 - Runtime type validation
 
@@ -745,6 +749,7 @@ The package provides robust error handling for browser operations:
 3. **Console logging**: Use provided `consoleLog` function to capture debug output
 4. **Timeouts**: Set appropriate timeouts for complex operations
 5. **Browser visibility**: Note that scripts run with `headless: false` by default
+6. **Independent operation**: The `runPuppeteerScript` tool operates independently of ChromeService
 
 ## Testing
 
@@ -873,6 +878,18 @@ pkg/chrome/
 - Optimize script execution time
 - Check network conditions
 
+**Browser visible when running scripts**
+
+- The `runPuppeteerScript` tool launches with `headless: false`
+- This is by default for debugging purposes
+- Modify the tool implementation if headless mode is required
+
+**Tool not using ChromeService**
+
+- The `runPuppeteerScript` tool operates independently
+- It does not use the ChromeService or agent configuration
+- This is intentional for isolated script execution
+
 ## Related Components
 
 - **WebSearchProvider**: Base provider interface from `@tokenring-ai/websearch`
@@ -883,4 +900,4 @@ pkg/chrome/
 
 ## License
 
-MIT
+MIT License - see the root LICENSE file for details.
