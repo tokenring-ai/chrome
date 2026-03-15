@@ -194,7 +194,7 @@ const provider = new ChromeWebSearchProvider(chromeService);
 async searchWeb(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<WebSearchResult>
 ```
 
-Performs Google web search via Puppeteer browser. Returns organic search results with title, link, and snippet in order of appearance. Supports `countryCode` parameter. Uses `[data-ved] h3` selectors for results and `[data-sncf]` for snippets. Browser launched and disconnected per request. **Requires agent parameter.**
+Performs Google web search via Puppeteer browser. Returns organic search results with title, link, and snippet in order of appearance. Supports `countryCode` parameter. Uses `[data-ved]` h3 selectors for results and `[data-sncf]` for snippets. Browser launched and disconnected per request. **Requires agent parameter.**
 
 ```typescript
 async searchNews(query: string, options?: WebSearchProviderOptions, agent?: Agent): Promise<NewsSearchResult>
@@ -652,12 +652,12 @@ app.install(chromePlugin, {
 
 The package depends on the following core packages:
 
-- `@tokenring-ai/app` ^0.2.0 - Application framework and plugin system
-- `@tokenring-ai/chat` ^0.2.0 - Chat service and tool definitions
-- `@tokenring-ai/agent` ^0.2.0 - Agent framework for tool execution
-- `@tokenring-ai/websearch` ^0.2.0 - Base WebSearchProvider and result types
-- `@tokenring-ai/utility` ^0.2.0 - Utility functions for deep merging
-- `puppeteer` ^24.38.0 - Headless Chrome browser automation
+- `@tokenring-ai/app` 0.2.0 - Application framework and plugin system
+- `@tokenring-ai/chat` 0.2.0 - Chat service and tool definitions
+- `@tokenring-ai/agent` 0.2.0 - Agent framework for tool execution
+- `@tokenring-ai/websearch` 0.2.0 - Base WebSearchProvider and result types
+- `@tokenring-ai/utility` 0.2.0 - Utility functions for deep merging
+- `puppeteer` ^24.39.1 - Headless Chrome browser automation
 - `turndown` ^7.2.2 - HTML to Markdown conversion
 - `zod` ^4.3.6 - Runtime type validation
 
