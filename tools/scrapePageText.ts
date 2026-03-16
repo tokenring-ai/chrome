@@ -37,8 +37,7 @@ async function execute(
   }
 }
 
-const description =
-  "Scrape text content from a web page using Puppeteer. By default, it prioritizes content from 'article', 'main', or 'body' tags in that order. Returns the extracted text along with the source selector used." as const;
+const description = "Scrape text content from a web page using Puppeteer. By default, it prioritizes content from 'article', 'main', or 'body' tags in that order. Returns the extracted text along with the source selector used." as const;
 
 const inputSchema = z.object({
   url: z

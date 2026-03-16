@@ -73,8 +73,7 @@ async function execute(
   return { type: 'json' as const, data: { result, logs } };
 }
 
-const description =
-  "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
+const description = "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
 
 const inputSchema = z.object({
   script: z

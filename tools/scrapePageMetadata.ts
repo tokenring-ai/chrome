@@ -86,8 +86,7 @@ async function execute(
   }
 }
 
-const description =
-  "Loads a web page and extracts metadata from the <head> tag and any JSON-LD (Schema.org) blocks found in the document. This is useful for SEO analysis and extracting structured data." as const;
+const description = "Loads a web page and extracts metadata from the <head> tag and any JSON-LD (Schema.org) blocks found in the document. This is useful for SEO analysis and extracting structured data." as const;
 
 const inputSchema = z.object({
   url: z

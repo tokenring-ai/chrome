@@ -48,8 +48,7 @@ async function execute(
   }
 }
 
-const description =
-  "Captures a visual screenshot of a web page at a specific width. Returns the image as base64 data." as const;
+const description = "Captures a visual screenshot of a web page at a specific width. Returns the image as base64 data." as const;
 
 const inputSchema = z.object({
   url: z
