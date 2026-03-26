@@ -44,6 +44,7 @@ async function execute(
   } catch (err: any) {
     throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
+    await page.close();
     await browser.close();
   }
 }

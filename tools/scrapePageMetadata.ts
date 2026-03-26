@@ -82,6 +82,7 @@ async function execute(
     throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
     if (timeout) clearTimeout(timeout);
+    await page.close();
     await browser.close();
   }
 }
