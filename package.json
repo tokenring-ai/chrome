@@ -1,7 +1,7 @@
 {
   "name": "@tokenring-ai/chrome",
   "version": "0.2.0",
-  "description": "Chrome browser automation for Token Ring",
+  "description": "Headless browser automation using Puppeteer for complex web interactions.",
   "dependencies": {
     "@tokenring-ai/app": "0.2.0",
     "@tokenring-ai/chat": "0.2.0",
