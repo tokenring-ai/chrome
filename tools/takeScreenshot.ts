@@ -1,5 +1,5 @@
-import Agent from "@tokenring-ai/agent/Agent";
-import {TokenRingToolDefinition, type TokenRingToolMediaResult} from "@tokenring-ai/chat/schema";
+import type Agent from "@tokenring-ai/agent/Agent";
+import type {TokenRingToolDefinition, TokenRingToolMediaResult,} from "@tokenring-ai/chat/schema";
 import {z} from "zod";
 import ChromeService from "../ChromeService.ts";
 import {ChromeState} from "../state/chromeState.ts";
@@ -36,11 +36,10 @@ async function execute(
     });
 
     return {
-      type: 'media',
-      mediaType: 'image/png',
+      type: "media",
+      mediaType: "image/png",
       data: screenshotBase64,
     };
-
   } catch (err: any) {
     throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
@@ -49,21 +48,26 @@ async function execute(
   }
 }
 
-const description = "Captures a visual screenshot of a web page at a specific width. Returns the image as base64 data." as const;
+const description =
+  "Captures a visual screenshot of a web page at a specific width. Returns the image as base64 data." as const;
 
 const inputSchema = z.object({
-  url: z
-    .string()
-    .describe("The URL of the web page to screenshot."),
+  url: z.string().describe("The URL of the web page to screenshot."),
   screenWidth: z
     .number()
     .int()
     .min(300)
     .max(1024)
     .default(1024)
-    .describe("The width of the browser viewport in pixels (min 300, max 1024)."),
+    .describe(
+      "The width of the browser viewport in pixels (min 300, max 1024).",
+    ),
 });
 
 export default {
-  name, displayName, description, inputSchema, execute,
+  name,
+  displayName,
+  description,
+  inputSchema,
+  execute,
 } satisfies TokenRingToolDefinition<typeof inputSchema>;

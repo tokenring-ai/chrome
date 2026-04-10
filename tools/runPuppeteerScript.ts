@@ -1,5 +1,5 @@
-import Agent from "@tokenring-ai/agent/Agent";
-import {TokenRingToolDefinition} from "@tokenring-ai/chat/schema";
+import type Agent from "@tokenring-ai/agent/Agent";
+import type {TokenRingToolDefinition} from "@tokenring-ai/chat/schema";
 import puppeteer from "puppeteer";
 import {z} from "zod";
 
@@ -56,9 +56,12 @@ async function execute(
     ) => Promise<unknown>;
 
     // Enforce script timeout
-    timeout = setTimeout(() => {
-      throw new Error("Script timed out");
-    }, Math.max(5, Math.min(timeoutSeconds, 180)) * 1000);
+    timeout = setTimeout(
+      () => {
+        throw new Error("Script timed out");
+      },
+      Math.max(5, Math.min(timeoutSeconds, 180)) * 1000,
+    );
 
     result = await fn(page, browser, consoleLog);
   } catch (err: any) {
@@ -70,10 +73,11 @@ async function execute(
   }
 
   // Return successful execution result
-  return { type: 'json' as const, data: { result, logs } };
+  return {type: "json" as const, data: {result, logs}};
 }
 
-const description = "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
+const description =
+  "Run a Puppeteer script with access to a browser and page. Accepts a JavaScript function or module as a string, executes it with Puppeteer page instance, and returns the result." as const;
 
 const inputSchema = z.object({
   script: z
@@ -95,5 +99,9 @@ const inputSchema = z.object({
 });
 
 export default {
-  name, displayName, description, inputSchema, execute,
+  name,
+  displayName,
+  description,
+  inputSchema,
+  execute,
 } satisfies TokenRingToolDefinition<typeof inputSchema>;

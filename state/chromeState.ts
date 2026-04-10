@@ -1,6 +1,7 @@
 import {AgentStateSlice} from "@tokenring-ai/agent/types";
+import markdownList from "@tokenring-ai/utility/string/markdownList";
 import {z} from "zod";
-import {ChromeConfigSchema} from "../schema.ts";
+import type {ChromeConfigSchema} from "../schema.ts";
 
 const serializationSchema = z.object({
   launch: z.boolean(),
@@ -8,8 +9,8 @@ const serializationSchema = z.object({
   browserWSEndpoint: z.string().optional(),
   executablePath: z.string().optional(),
   screenshot: z.object({
-    maxPixels: z.number()
-  })
+    maxPixels: z.number(),
+  }),
 });
 
 export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
@@ -21,16 +22,21 @@ export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
     maxPixels: number;
   };
 
-  constructor(readonly initialConfig: z.output<typeof ChromeConfigSchema>["agentDefaults"]) {
+  constructor(
+    readonly initialConfig: z.output<
+      typeof ChromeConfigSchema
+    >["agentDefaults"],
+  ) {
     super("ChromeState", serializationSchema);
     this.launch = initialConfig.launch;
     this.headless = initialConfig.headless;
     this.browserWSEndpoint = initialConfig.browserWSEndpoint;
     this.executablePath = initialConfig.executablePath;
-    this.screenshot = { ... initialConfig.screenshot };
+    this.screenshot = {...initialConfig.screenshot};
   }
 
-  reset(): void {}
+  reset(): void {
+  }
 
   serialize(): z.output<typeof serializationSchema> {
     return {
@@ -50,12 +56,13 @@ export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
     this.screenshot = data.screenshot;
   }
 
-  show(): string[] {
-    return [
+  show(): string {
+    return `Chrome:
+${markdownList([
       `Launch: ${this.launch}`,
       `Headless: ${this.headless}`,
-      `Browser WS Endpoint: ${this.browserWSEndpoint || 'N/A'}`,
-      `Executable Path: ${this.executablePath || 'N/A'}`,
-    ];
+      `Browser WS Endpoint: ${this.browserWSEndpoint || "N/A"}`,
+      `Executable Path: ${this.executablePath || "N/A"}`,
+    ])}`;
   }
 }
