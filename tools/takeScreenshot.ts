@@ -1,5 +1,5 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolMediaResult,} from "@tokenring-ai/chat/schema";
+import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
 import {z} from "zod";
 import ChromeService from "../ChromeService.ts";
 import {ChromeState} from "../state/chromeState.ts";
@@ -10,7 +10,7 @@ const displayName = "Chrome/takeScreenshot";
 async function execute(
   {url, screenWidth = 1024}: z.output<typeof inputSchema>,
   agent: Agent,
-): Promise<TokenRingToolMediaResult> {
+): Promise<TokenRingToolResult> {
   const chromeService = agent.requireServiceByType(ChromeService);
   const config = agent.getState(ChromeState);
   const browser = await chromeService.getBrowser(agent);
@@ -36,9 +36,15 @@ async function execute(
     });
 
     return {
-      type: "media",
-      mediaType: "image/png",
-      data: screenshotBase64,
+      result: `Screenshot of ${url} at ${screenWidth}x${height} pixels`,
+      attachments: [
+        {
+          name: "screenshot.png",
+          mimeType: "image/png",
+          encoding: "base64",
+          body: screenshotBase64,
+        }
+      ]
     };
   } catch (err: any) {
     throw new Error(`[${name}] ${err?.message || String(err)}`);

@@ -1,5 +1,5 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolJSONResult,} from "@tokenring-ai/chat/schema";
+import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
 import {z} from "zod";
 import ChromeService from "../ChromeService.ts";
 
@@ -15,7 +15,7 @@ export type ExecuteResult = {
 async function execute(
   {url, timeoutSeconds = 30}: z.output<typeof inputSchema>,
   agent: Agent,
-): Promise<TokenRingToolJSONResult<any>> {
+): Promise<TokenRingToolResult> {
   if (!url) {
     throw new Error(`[${name}] url is required`);
   }
@@ -70,21 +70,12 @@ async function execute(
       });
 
       return {
-        type: "json",
-        data: {
-          headHtml,
-          jsonLd,
-        },
+        headHtml,
+        jsonLd,
       };
     });
 
-    return {
-      type: "json",
-      data: {
-        ...metadata,
-        url,
-      },
-    };
+    return JSON.stringify({...metadata, url});
   } catch (err: any) {
     throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {

@@ -1,5 +1,5 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition} from "@tokenring-ai/chat/schema";
+import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
 import puppeteer from "puppeteer";
 import {z} from "zod";
 
@@ -15,7 +15,7 @@ export type ExecuteResult = {
 async function execute(
   {script, navigateTo, timeoutSeconds = 30}: z.output<typeof inputSchema>,
   _agent: Agent,
-) {
+): Promise<TokenRingToolResult> {
   // Launch Puppeteer browser (headless mode can be adjusted as needed)
   const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
@@ -73,7 +73,7 @@ async function execute(
   }
 
   // Return successful execution result
-  return {type: "json" as const, data: {result, logs}};
+  return JSON.stringify({result, logs});
 }
 
 const description =

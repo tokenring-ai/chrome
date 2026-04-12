@@ -1,5 +1,5 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolTextResult,} from "@tokenring-ai/chat/schema";
+import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
 import TurndownService from "turndown";
 import {z} from "zod";
 import ChromeService from "../ChromeService.ts";
@@ -16,7 +16,7 @@ export type ExecuteResult = {
 async function execute(
   {url, timeoutSeconds = 30, selector}: z.output<typeof inputSchema>,
   agent: Agent,
-): Promise<TokenRingToolTextResult> {
+): Promise<TokenRingToolResult> {
   const chromeService = agent.requireServiceByType(ChromeService);
   const browser = await chromeService.getBrowser(agent);
   const page = await browser.newPage();
@@ -32,10 +32,7 @@ async function execute(
     if (selector) {
       const element = await page.$(selector);
       if (!element) {
-        return {
-          type: "text",
-          text: `No element found matching selector: ${selector}`,
-        };
+        throw new Error(`No element found matching selector: ${selector}`);
       }
       html = await page.evaluate((el) => el.outerHTML, element);
     } else {
@@ -51,8 +48,15 @@ async function execute(
 
     const turndownService = new TurndownService();
     return {
-      type: "text",
-      text: turndownService.turndown(html),
+      result: `Extracted markdown from ${url} using selector: ${selector || "auto-detected"}`,
+      attachments: [
+        {
+          name: "extracted_text.md",
+          mimeType: "text/markdown",
+          encoding: "text",
+          body: turndownService.turndown(html),
+        }
+      ]
     };
   } finally {
     await page.close();
