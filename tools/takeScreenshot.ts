@@ -39,6 +39,7 @@ async function execute(
       result: `Screenshot of ${url} at ${screenWidth}x${height} pixels`,
       attachments: [
         {
+          sendToLLM: true,
           name: "screenshot.png",
           mimeType: "image/png",
           encoding: "base64",

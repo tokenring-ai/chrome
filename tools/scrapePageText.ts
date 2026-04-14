@@ -47,8 +47,9 @@ async function execute(
     }
 
     const turndownService = new TurndownService();
+    const markdown = turndownService.turndown(html);
     return {
-      result: `Extracted markdown from ${url} using selector: ${selector || "auto-detected"}`,
+      result: `Extracted markdown from ${url} using selector: ${selector || "auto-detected"}\n${markdown}`,
       attachments: [
         {
           name: "extracted_text.md",
