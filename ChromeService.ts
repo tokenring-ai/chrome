@@ -1,8 +1,10 @@
 import type Agent from "@tokenring-ai/agent/Agent";
 import type {TokenRingService} from "@tokenring-ai/app/types";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
-import puppeteer, {type Browser, type ConnectOptions, type LaunchOptions} from "puppeteer";
+import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+import type {Browser} from "puppeteer";
 import type {z} from "zod";
+import ChromeWebSearchProvider from "./ChromeWebSearchProvider.ts";
 import {ChromeAgentConfigSchema, type ChromeConfigSchema} from "./schema.ts";
 import {ChromeState} from "./state/chromeState.ts";
 
@@ -10,7 +12,23 @@ export default class ChromeService implements TokenRingService {
   readonly name = "ChromeService";
   description = "Chrome browser automation service";
 
+  instances = new KeyedRegistry<ChromeWebSearchProvider>();
+  getInstanceEntries = this.instances.entries;
+
   constructor(private options: z.output<typeof ChromeConfigSchema>) {
+    for (const [name, providerConfig] of Object.entries(options.instances)) {
+      this.instances.set(name, new ChromeWebSearchProvider(providerConfig));
+    }
+  }
+
+  requireInstance(agent: Agent) {
+    const {config} = agent.getState(ChromeState);
+
+    if (!config.instance) {
+      throw new Error("Chrome instance not configured");
+    }
+
+    return this.instances.require(config.instance);
   }
 
   attach(agent: Agent): void {
@@ -21,13 +39,11 @@ export default class ChromeService implements TokenRingService {
     agent.initializeState(ChromeState, config);
   }
 
-  async getBrowser(agent: Agent): Promise<Browser> {
-    const state = agent.getState(ChromeState);
+  getBrowser(agent: Agent): Promise<Browser> {
+    const {config} = agent.getState(ChromeState);
 
-    if (state.launch) {
-      return await puppeteer.launch(state as LaunchOptions);
-    } else {
-      return await puppeteer.connect(state as ConnectOptions);
-    }
+    const instance = this.instances.require(config.instance);
+
+    return instance.getBrowser();
   }
 }

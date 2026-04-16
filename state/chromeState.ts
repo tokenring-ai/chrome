@@ -1,68 +1,37 @@
 import {AgentStateSlice} from "@tokenring-ai/agent/types";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
+import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import markdownList from "@tokenring-ai/utility/string/markdownList";
-import {z} from "zod";
-import type {ChromeConfigSchema} from "../schema.ts";
+import type {z} from "zod";
+import {ChromeConfigSchema, type ParsedChromeConfig} from "../schema.ts";
 
-const serializationSchema = z.object({
-  launch: z.boolean(),
-  headless: z.boolean(),
-  browserWSEndpoint: z.string().optional(),
-  executablePath: z.string().optional(),
-  screenshot: z.object({
-    maxPixels: z.number(),
-  }),
-});
+const serializationSchema = ChromeConfigSchema.shape.agentDefaults;
 
 export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
-  launch: boolean;
-  headless: boolean;
-  browserWSEndpoint?: string;
-  executablePath?: string;
-  screenshot: {
-    maxPixels: number;
-  };
+  config: ParsedChromeConfig["agentDefaults"];
 
   constructor(
-    readonly initialConfig: z.output<
-      typeof ChromeConfigSchema
-    >["agentDefaults"],
+    readonly initialConfig: ParsedChromeConfig["agentDefaults"]
   ) {
     super("ChromeState", serializationSchema);
-    this.launch = initialConfig.launch;
-    this.headless = initialConfig.headless;
-    this.browserWSEndpoint = initialConfig.browserWSEndpoint;
-    this.executablePath = initialConfig.executablePath;
-    this.screenshot = {...initialConfig.screenshot};
+    this.config = deepClone(initialConfig);
   }
 
   reset(): void {
   }
 
   serialize(): z.output<typeof serializationSchema> {
-    return {
-      launch: this.launch,
-      headless: this.headless,
-      browserWSEndpoint: this.browserWSEndpoint,
-      executablePath: this.executablePath,
-      screenshot: this.screenshot,
-    };
+    return this.config;
   }
 
   deserialize(data: z.output<typeof serializationSchema>): void {
-    this.launch = data.launch;
-    this.headless = data.headless;
-    this.browserWSEndpoint = data.browserWSEndpoint;
-    this.executablePath = data.executablePath;
-    this.screenshot = data.screenshot;
+    this.config = deepMerge(this.config, data);
   }
 
   show(): string {
     return `Chrome:
 ${markdownList([
-      `Launch: ${this.launch}`,
-      `Headless: ${this.headless}`,
-      `Browser WS Endpoint: ${this.browserWSEndpoint || "N/A"}`,
-      `Executable Path: ${this.executablePath || "N/A"}`,
+      `Insteance: ${this.config.instance}`,
     ])}`;
   }
 }
