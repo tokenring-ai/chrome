@@ -1,7 +1,7 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
+import type { TokenRingToolDefinition, TokenRingToolResult } from "@tokenring-ai/chat/schema";
 import TurndownService from "turndown";
-import {z} from "zod";
+import { z } from "zod";
 import ChromeService from "../ChromeService.ts";
 
 const name = "chrome_scrapePageText";
@@ -13,10 +13,7 @@ export type ExecuteResult = {
   url: string;
 };
 
-async function execute(
-  {url, timeoutSeconds = 30, selector}: z.output<typeof inputSchema>,
-  agent: Agent,
-): Promise<TokenRingToolResult> {
+async function execute({ url, timeoutSeconds = 30, selector }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
   const chromeService = agent.requireServiceByType(ChromeService);
   const browser = await chromeService.getBrowser(agent);
   const page = await browser.newPage();
@@ -34,12 +31,12 @@ async function execute(
       if (!element) {
         throw new Error(`No element found matching selector: ${selector}`);
       }
-      html = await page.evaluate((el) => el.outerHTML, element);
+      html = await page.evaluate(el => el.outerHTML, element);
     } else {
       for (const fallback of ["article", "main", "body"]) {
         const element = await page.$(fallback);
         if (element) {
-          html = await page.evaluate((el) => el.outerHTML, element);
+          html = await page.evaluate(el => el.outerHTML, element);
           break;
         }
       }
@@ -56,8 +53,8 @@ async function execute(
           mimeType: "text/markdown",
           encoding: "text",
           body: turndownService.turndown(html),
-        }
-      ]
+        },
+      ],
     };
   } finally {
     await page.close();
@@ -70,21 +67,11 @@ const description =
 
 const inputSchema = z.object({
   url: z.string().describe("The URL of the web page to scrape text from."),
-  timeoutSeconds: z
-    .number()
-    .int()
-    .min(5)
-    .max(180)
-    .describe(
-      "(Optional) Timeout for the scraping operation (default 30s, max 180s).",
-    )
-    .optional(),
+  timeoutSeconds: z.number().int().min(5).max(180).describe("(Optional) Timeout for the scraping operation (default 30s, max 180s).").exactOptional(),
   selector: z
     .string()
-    .describe(
-      "(Optional) Custom CSS selector to target specific content. If not provided, will use 'article', 'main', or 'body' in that priority order.",
-    )
-    .optional(),
+    .describe("(Optional) Custom CSS selector to target specific content. If not provided, will use 'article', 'main', or 'body' in that priority order.")
+    .exactOptional(),
 });
 
 export default {

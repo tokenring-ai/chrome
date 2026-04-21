@@ -1,29 +1,32 @@
-import {z} from "zod";
+import { z } from "zod";
 
-export const ChromeInstanceConfigSchema = z
+export const ChromeInstanceConfigSchema = z.object({
+  launch: z.boolean().default(true),
+  headless: z.boolean().default(false),
+  browserWSEndpoint: z.string().exactOptional(),
+  executablePath: z.string().exactOptional(),
+  screenshot: z
+    .object({
+      maxPixels: z.number().default(1000000),
+    })
+    .prefault({}),
+});
+
+export const ChromeAgentConfigSchema = z
   .object({
-    launch: z.boolean().default(true),
-    headless: z.boolean().default(false),
-    browserWSEndpoint: z.string().optional(),
-    executablePath: z.string().optional(),
-    screenshot: z
-      .object({
-        maxPixels: z.number().default(1000000),
-      })
-      .prefault({}),
-  });
-
-export const ChromeAgentConfigSchema = z.object({
-  instance: z.string().optional(),
-}).prefault({});
+    instance: z.string().exactOptional(),
+  })
+  .prefault({});
 
 export const ChromeConfigSchema = z.object({
   instances: z.record(z.string(), ChromeInstanceConfigSchema).prefault({
-    "chrome": {}
+    chrome: {},
   }),
-  agentDefaults: z.object({
-    instance: z.string().default("chrome"),
-  }).prefault({}),
+  agentDefaults: z
+    .object({
+      instance: z.string().default("chrome"),
+    })
+    .prefault({}),
 });
 
 export type ChromeConfig = z.input<typeof ChromeConfigSchema>;

@@ -6,14 +6,13 @@ import type {
   WebSearchProviderOptions,
   WebSearchResult,
 } from "@tokenring-ai/websearch/WebSearchProvider";
-import puppeteer, {type Browser} from "puppeteer";
+import puppeteer, { type Browser } from "puppeteer";
 import TurndownService from "turndown";
-import type {z} from "zod";
-import type {ChromeInstanceConfigSchema} from "./schema.ts";
+import type { z } from "zod";
+import type { ChromeInstanceConfigSchema } from "./schema.ts";
 
 export default class ChromeWebSearchProvider implements WebSearchProvider {
-  constructor(public readonly config: z.output<typeof ChromeInstanceConfigSchema>) {
-  }
+  constructor(public readonly config: z.output<typeof ChromeInstanceConfigSchema>) {}
 
   async getBrowser(): Promise<Browser> {
     if (this.config.launch) {
@@ -23,10 +22,7 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
     }
   }
 
-  async searchWeb(
-    query: string,
-    options?: WebSearchProviderOptions,
-  ): Promise<WebSearchResult> {
+  async searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult> {
     const browser = await this.getBrowser();
 
     const page = await browser.newPage();
@@ -37,33 +33,26 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
         searchUrl += `&gl=${options.countryCode}`;
       }
 
-      await page.goto(searchUrl, {waitUntil: "networkidle0"});
+      await page.goto(searchUrl, { waitUntil: "networkidle0" });
       await page.waitForSelector("[data-ved]");
 
       const organic = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll("[data-ved] h3")).map(
-          (el, i) => ({
-            position: i + 1,
-            title: el.textContent || "",
-            link: el.closest("a")?.href || "",
-            snippet:
-              el.closest("div[lang=en][data-ved]")?.querySelector("[data-sncf]")
-                ?.textContent || "",
-          }),
-        );
+        return Array.from(document.querySelectorAll("[data-ved] h3")).map((el, i) => ({
+          position: i + 1,
+          title: el.textContent || "",
+          link: el.closest("a")?.href || "",
+          snippet: el.closest("div[lang=en][data-ved]")?.querySelector("[data-sncf]")?.textContent || "",
+        }));
       });
 
-      return {organic};
+      return { organic };
     } finally {
       await page.close();
       await browser.disconnect();
     }
   }
 
-  async searchNews(
-    query: string,
-    options?: WebSearchProviderOptions
-  ): Promise<NewsSearchResult> {
+  async searchNews(query: string, options?: WebSearchProviderOptions): Promise<NewsSearchResult> {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
 
@@ -73,38 +62,26 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
         searchUrl += `&gl=${options.countryCode}`;
       }
 
-      await page.goto(searchUrl, {waitUntil: "networkidle0"});
+      await page.goto(searchUrl, { waitUntil: "networkidle0" });
 
       const news = await page.evaluate(() => {
         // Find all news article containers using data attributes only
-        const articles = Array.from(
-          document.querySelectorAll("[data-news-doc-id]"),
-        );
+        const articles = Array.from(document.querySelectorAll("[data-news-doc-id]"));
 
         return articles
           .map((article, i) => {
             // Find the main link element using data attributes
-            const linkElement = article.querySelector(
-              "a[data-ved]",
-            ) as HTMLAnchorElement;
+            const linkElement = article.querySelector("a[data-ved]") as HTMLAnchorElement;
 
             // Extract title - look for elements with role="heading" or aria-level attribute
-            const titleElement =
-              article.querySelector('[role="heading"]') ||
-              article.querySelector("[aria-level]");
+            const titleElement = article.querySelector('[role="heading"]') || article.querySelector("[aria-level]");
 
             // Extract snippet - find text content in divs, excluding those with specific data attributes
             let snippetText = "";
-            const allDivs = article.querySelectorAll(
-              "div:not([data-ved]):not([data-hveid])",
-            );
+            const allDivs = article.querySelectorAll("div:not([data-ved]):not([data-hveid])");
             for (const div of allDivs) {
               // Look for divs containing text but not other nested structures
-              if (
-                div.textContent &&
-                div.children.length <= 1 &&
-                !div.querySelector('[role="heading"]')
-              ) {
+              if (div.textContent && div.children.length <= 1 && !div.querySelector('[role="heading"]')) {
                 const text = div.textContent.trim();
                 if (text.length > 20 && text.length < 500) {
                   // Reasonable snippet length
@@ -116,12 +93,9 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
 
             // Extract source - look for spans near images or within specific structural positions
             let sourceText = "";
-            const imgElements = article.querySelectorAll(
-              'img[alt=""], img[data-atf]',
-            );
+            const imgElements = article.querySelectorAll('img[alt=""], img[data-atf]');
             for (const img of imgElements) {
-              const nearbySpan =
-                img.parentElement?.parentElement?.querySelector("span");
+              const nearbySpan = img.parentElement?.parentElement?.querySelector("span");
               if (nearbySpan?.textContent) {
                 sourceText = nearbySpan.textContent.trim();
                 break;
@@ -129,10 +103,7 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
             }
 
             // Extract timestamp using data attributes or spans with date-like content
-            const timestampElement =
-              article.querySelector("[data-ts]") ||
-              article.querySelector('span[tabindex="-1"]')
-                ?.previousElementSibling;
+            const timestampElement = article.querySelector("[data-ts]") || article.querySelector('span[tabindex="-1"]')?.previousElementSibling;
 
             return {
               position: i + 1,
@@ -143,20 +114,17 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
               date: timestampElement?.textContent?.trim() || "",
             };
           })
-          .filter((item) => item.title && item.link); // Filter out any empty results
+          .filter(item => item.title && item.link); // Filter out any empty results
       });
 
-      return {news};
+      return { news };
     } finally {
       await page.close();
       await browser.disconnect();
     }
   }
 
-  async fetchPage(
-    url: string,
-    options?: WebPageOptions
-  ): Promise<WebPageResult> {
+  async fetchPage(url: string, options?: WebPageOptions): Promise<WebPageResult> {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
 
@@ -170,7 +138,7 @@ export default class ChromeWebSearchProvider implements WebSearchProvider {
       const turndownService = new TurndownService();
       const markdown = turndownService.turndown(html);
 
-      return {markdown};
+      return { markdown };
     } finally {
       await page.close();
       await browser.disconnect();

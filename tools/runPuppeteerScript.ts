@@ -1,7 +1,7 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
+import type { TokenRingToolDefinition, TokenRingToolResult } from "@tokenring-ai/chat/schema";
 import puppeteer from "puppeteer";
-import {z} from "zod";
+import { z } from "zod";
 
 // Exported tool name in the required format
 const name = "chrome_runPuppeteerScript";
@@ -12,25 +12,18 @@ export type ExecuteResult = {
   logs: string[];
 };
 
-async function execute(
-  {script, navigateTo, timeoutSeconds = 30}: z.output<typeof inputSchema>,
-  _agent: Agent,
-): Promise<TokenRingToolResult> {
+async function execute({ script, navigateTo, timeoutSeconds = 30 }: z.output<typeof inputSchema>, _agent: Agent): Promise<TokenRingToolResult> {
   // Launch Puppeteer browser (headless mode can be adjusted as needed)
-  const browser = await puppeteer.launch({headless: false});
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
   const logs: string[] = [];
 
   function consoleLog(...args: unknown[]) {
-    logs.push(
-      args
-        .map((a) => (typeof a === "string" ? a : JSON.stringify(a)))
-        .join(" "),
-    );
+    logs.push(args.map(a => (typeof a === "string" ? a : JSON.stringify(a))).join(" "));
   }
 
-  page.on("console", (msg) => {
+  page.on("console", msg => {
     logs.push(`[browser] ${msg.type()}: ${msg.text()}`);
   });
 
@@ -38,18 +31,13 @@ async function execute(
   let timeout: NodeJS.Timeout | undefined;
   try {
     if (navigateTo) {
-      await page.goto(navigateTo, {waitUntil: "load", timeout: 20000});
+      await page.goto(navigateTo, { waitUntil: "load", timeout: 20000 });
     }
 
     // Build a wrapper function to evaluate the user script with context
     const asyncScriptWrapper = `(async () => {\n  const userFn = ${script}\n  return await userFn({ page, browser, consoleLog });\n})();`;
 
-    const fn = new Function(
-      "page",
-      "browser",
-      "consoleLog",
-      `return ${asyncScriptWrapper}`,
-    ) as (
+    const fn = new Function("page", "browser", "consoleLog", `return ${asyncScriptWrapper}`) as (
       page: any,
       browser: any,
       consoleLog: (...args: unknown[]) => void,
@@ -73,7 +61,7 @@ async function execute(
   }
 
   // Return successful execution result
-  return JSON.stringify({result, logs});
+  return JSON.stringify({ result, logs });
 }
 
 const description =
@@ -85,17 +73,8 @@ const inputSchema = z.object({
     .describe(
       "A JavaScript code string to run. It should export or define an async function to be called with ({ page, browser, consoleLog }) as arguments. The return value will be returned as output.",
     ),
-  navigateTo: z
-    .string()
-    .describe("(Optional) Page URL to navigate to before executing the script.")
-    .optional(),
-  timeoutSeconds: z
-    .number()
-    .int()
-    .min(5)
-    .max(180)
-    .describe("(Optional) Timeout for script execution (default 30s, max 180).")
-    .optional(),
+  navigateTo: z.string().describe("(Optional) Page URL to navigate to before executing the script.").exactOptional(),
+  timeoutSeconds: z.number().int().min(5).max(180).describe("(Optional) Timeout for script execution (default 30s, max 180).").exactOptional(),
 });
 
 export default {

@@ -1,6 +1,6 @@
 import type Agent from "@tokenring-ai/agent/Agent";
-import type {TokenRingToolDefinition, TokenRingToolResult} from "@tokenring-ai/chat/schema";
-import {z} from "zod";
+import type { TokenRingToolDefinition, TokenRingToolResult } from "@tokenring-ai/chat/schema";
+import { z } from "zod";
 import ChromeService from "../ChromeService.ts";
 
 const name = "chrome_scrapePageMetadata";
@@ -12,10 +12,7 @@ export type ExecuteResult = {
   url: string;
 };
 
-async function execute(
-  {url, timeoutSeconds = 30}: z.output<typeof inputSchema>,
-  agent: Agent,
-): Promise<TokenRingToolResult> {
+async function execute({ url, timeoutSeconds = 30 }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
   if (!url) {
     throw new Error(`[${name}] url is required`);
   }
@@ -26,7 +23,7 @@ async function execute(
 
   let timeout: NodeJS.Timeout | undefined;
   try {
-    await page.goto(url, {waitUntil: "domcontentloaded", timeout: 20000});
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
 
     timeout = setTimeout(
       () => {
@@ -41,24 +38,22 @@ async function execute(
 
       // Remove content from <style> and <script> tags (except JSON-LD)
       const scripts = headClone.querySelectorAll("script");
-      scripts.forEach((script) => {
+      scripts.forEach(script => {
         if (script.type !== "application/ld+json") {
           script.textContent = "[ omitted for brevity ]"; // Keep the tag/attributes but remove the code
         }
       });
 
       const styles = headClone.querySelectorAll("style");
-      styles.forEach((style) => {
+      styles.forEach(style => {
         style.textContent = "[ omitted for brevity ]"; // Remove CSS rules
       });
 
       const headHtml = headClone.innerHTML;
 
       // Extract and parse all JSON-LD blocks from the actual document
-      const jsonLdScripts = Array.from(
-        document.querySelectorAll('script[type="application/ld+json"]'),
-      );
-      const jsonLd = jsonLdScripts.map((script) => {
+      const jsonLdScripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+      const jsonLd = jsonLdScripts.map(script => {
         try {
           return JSON.parse(script.textContent || "{}");
         } catch {
@@ -75,7 +70,7 @@ async function execute(
       };
     });
 
-    return JSON.stringify({...metadata, url});
+    return JSON.stringify({ ...metadata, url });
   } catch (err: any) {
     throw new Error(`[${name}] ${err?.message || String(err)}`);
   } finally {
@@ -90,13 +85,7 @@ const description =
 
 const inputSchema = z.object({
   url: z.string().describe("The URL of the web page to scrape metadata from."),
-  timeoutSeconds: z
-    .number()
-    .int()
-    .min(5)
-    .max(180)
-    .describe("(Optional) Timeout for the operation (default 30s).")
-    .optional(),
+  timeoutSeconds: z.number().int().min(5).max(180).describe("(Optional) Timeout for the operation (default 30s).").exactOptional(),
 });
 
 export default {
