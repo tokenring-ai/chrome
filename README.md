@@ -17,7 +17,7 @@ scripts through a headless Chrome browser environment.
 - **Metadata Extraction**: Extract page metadata and JSON-LD structured data
 - **Screenshots**: Capture visual screenshots with configurable viewport
 - **Custom Scripts**: Execute custom Puppeteer scripts with full access
-- **Lifecycle Management**: Flexible browser launch and connection options
+- **Multi-Instance Support**: Configure multiple browser instances with different settings
 - **Agent Integration**: Seamless integration with Token Ring agent system
 
 ## Installation
@@ -28,56 +28,79 @@ bun install @tokenring-ai/chrome
 
 ## Configuration
 
-### ChromeConfigSchema
+### ChromeInstanceConfigSchema
+
+Configuration for individual Chrome browser instances:
 
 ```typescript
-export const ChromeConfigSchema = z.object({
-  agentDefaults: z.object({
-    launch: z.boolean().default(true),
-    headless: z.boolean().default(true),
-    browserWSEndpoint: z.string().optional(),
-    executablePath: z.string().optional(),
-    screenshot: z.object({
+export const ChromeInstanceConfigSchema = z.object({
+  launch: z.boolean().default(true),
+  headless: z.boolean().default(false),
+  browserWSEndpoint: z.string().exactOptional(),
+  executablePath: z.string().exactOptional(),
+  screenshot: z
+    .object({
       maxPixels: z.number().default(1000000),
-    }).prefault({}),
-  }).prefault({}),
+    })
+    .prefault({}),
 });
 ```
 
 ### ChromeAgentConfigSchema
 
+Agent-specific configuration:
+
 ```typescript
 export const ChromeAgentConfigSchema = z
   .object({
-    launch: z.boolean().optional(),
-    headless: z.boolean().optional(),
-    browserWSEndpoint: z.string().optional(),
-    executablePath: z.string().optional(),
-    screenshot: z
-      .object({
-        maxPixels: z.number().optional(),
-      })
-      .optional(),
+    instance: z.string().exactOptional(),
   })
-  .default({});
+  .prefault({});
+```
+
+### ChromeConfigSchema
+
+Top-level package configuration:
+
+```typescript
+export const ChromeConfigSchema = z.object({
+  instances: z.record(z.string(), ChromeInstanceConfigSchema).prefault({
+    chrome: {},
+  }),
+  agentDefaults: z
+    .object({
+      instance: z.string().default("chrome"),
+    })
+    .prefault({}),
+});
 ```
 
 ### Example Configuration
 
 ```yaml
 chrome:
+  instances:
+    default:
+      launch: true
+      headless: true
+      screenshot:
+        maxPixels: 1000000
+    visible:
+      launch: true
+      headless: false
+      screenshot:
+        maxPixels: 2000000
   agentDefaults:
-    launch: true
-    headless: true
-    screenshot:
-      maxPixels: 1000000
+    instance: default
 ```
 
 **Configuration Notes:**
 
+- `instances` - Record of named browser instances with their configurations
+- `agentDefaults.instance` - Default instance name for agents (default: "chrome")
 - `launch: true` - Creates a new Puppeteer browser instance for each operation
 - `launch: false` - Connects to an existing browser session
-- `headless: true` - Runs browser in headless mode (default)
+- `headless: true` - Runs browser in headless mode (default: false)
 - `headless: false` - Runs browser with visible UI (useful for debugging)
 - `browserWSEndpoint` - WebSocket endpoint for connecting to existing browser
 - `executablePath` - Custom path to Chrome/Chromium executable
@@ -98,8 +121,7 @@ it prioritizes content from 'article', 'main', or 'body' tags in that order.
 {
   name: "chrome_scrapePageText",
   displayName: "Chrome/scrapePageText",
-  description: "Scrape text content from a web page using Puppeteer. By default,
-    it prioritizes content from 'article', 'main', or 'body' tags in that order.",
+  description: "Scrape text content from a web page using Puppeteer...",
   inputSchema: {
     url: string,
     timeoutSeconds?: number,
@@ -110,13 +132,16 @@ it prioritizes content from 'article', 'main', or 'body' tags in that order.
 
 **Parameters:**
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| url | string | Yes | The URL of the web page to scrape |
-| timeoutSeconds | number | No | Timeout (default: 30, min: 5, max: 180) |
-| selector | string | No | Custom CSS selector; defaults to article/main/body |
+| Parameter      | Type   | Required | Description                                        |
+|----------------|--------|----------|----------------------------------------------------|
+| url            | string | Yes      | The URL of the web page to scrape                  |
+| timeoutSeconds | number | No       | Timeout (default: 30, min: 5, max: 180)            |
+| selector       | string | No       | Custom CSS selector; defaults to article/main/body |
 
-**Output:** Returns text result with `type: 'text'` containing Markdown content
+**Output:** Returns `TokenRingToolResult` with:
+
+- `result`: Text description of extraction
+- `attachments`: Array containing extracted markdown file
 
 **Usage Example:**
 
@@ -126,12 +151,13 @@ const result = await agent.callTool("chrome_scrapePageText", {
   timeoutSeconds: 30
 });
 
-console.log(result.text); // Markdown content
+console.log(result.result); // Description text
+console.log(result.attachments[0].body); // Markdown content
 ```
 
 **Implementation Details:**
 
-- Uses ChromeService for browser management
+- Uses ChromeService for browser management via `agent.requireServiceByType()`
 - Waits for `domcontentloaded` before extracting content
 - If `selector` provided, extracts only that element's outerHTML
 - If no `selector`, tries 'article', then 'main', then 'body'
@@ -161,12 +187,12 @@ Useful for SEO analysis and extracting structured data.
 
 **Parameters:**
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| url | string | Yes | The URL of the web page to scrape |
-| timeoutSeconds | number | No | Timeout (default: 30, min: 5, max: 180) |
+| Parameter      | Type   | Required | Description                             |
+|----------------|--------|----------|-----------------------------------------|
+| url            | string | Yes      | The URL of the web page to scrape       |
+| timeoutSeconds | number | No       | Timeout (default: 30, min: 5, max: 180) |
 
-**Output:** Returns JSON result with `type: 'json'` containing:
+**Output:** Returns JSON string containing:
 
 - `headHtml`: Cleaned HTML of the `<head>` element
 - `jsonLd`: Array of parsed JSON-LD objects (Schema.org data)
@@ -180,14 +206,15 @@ const result = await agent.callTool("chrome_scrapePageMetadata", {
   timeoutSeconds: 30
 });
 
-console.log(result.data.headHtml); // Cleaned head HTML
-console.log(result.data.jsonLd); // Array of JSON-LD objects
-console.log(result.data.url); // Original URL
+const data = JSON.parse(result);
+console.log(data.headHtml); // Cleaned head HTML
+console.log(data.jsonLd); // Array of JSON-LD objects
+console.log(data.url); // Original URL
 ```
 
 **Implementation Details:**
 
-- Uses ChromeService for browser management
+- Uses ChromeService for browser management via `agent.requireServiceByType()`
 - Waits for `domcontentloaded` before extracting metadata
 - Clones `<head>` to avoid modifying the live page
 - Removes content from `<style>` and `<script>` tags (except JSON-LD)
@@ -217,13 +244,15 @@ Returns the image as base64-encoded PNG data.
 
 **Parameters:**
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| url | string | Yes | The URL of the web page to screenshot |
-| screenWidth | number | No | Viewport width (default 1024, min 300, max 1024) |
+| Parameter   | Type   | Required | Description                                      |
+|-------------|--------|----------|--------------------------------------------------|
+| url         | string | Yes      | The URL of the web page to screenshot            |
+| screenWidth | number | No       | Viewport width (default 1024, min 300, max 1024) |
 
-**Output:** Returns media result with `type: 'media'`,
-`mediaType: 'image/png'`, and `data` containing base64 image
+**Output:** Returns `TokenRingToolResult` with:
+
+- `result`: Description of screenshot
+- `attachments`: Array containing base64-encoded PNG image
 
 **Usage Example:**
 
@@ -235,13 +264,13 @@ const result = await agent.callTool("chrome_takeScreenshot", {
 
 // Save to file
 import fs from 'fs';
-fs.writeFileSync('screenshot.png', result.data, 'base64');
+fs.writeFileSync('screenshot.png', result.attachments[0].body, 'base64');
 ```
 
 **Implementation Details:**
 
-- Uses ChromeService for browser management
-- Reads `screenshot.maxPixels` from agent state (`ChromeState`)
+- Uses ChromeService for browser management via `agent.requireServiceByType()`
+- Reads `screenshot.maxPixels` from the configured instance
 - Calculates viewport height: `height = maxPixels / screenWidth`
 - Sets viewport with `deviceScaleFactor: 1` for 1:1 pixel ratio
 - Waits for `networkidle2` before capturing screenshot
@@ -260,8 +289,8 @@ This tool launches its own browser independently of ChromeService.
   name: "chrome_runPuppeteerScript",
   displayName: "Chrome/runPuppeteerScript",
   description: "Run a Puppeteer script with access to a browser and page.
-    Accepts a JavaScript function as a string, executes it with Puppeteer
-    page instance, and returns the result.",
+  Accepts a JavaScript function or module as a string, executes it with Puppeteer
+  page instance, and returns the result.",
   inputSchema: {
     script: string,
     navigateTo?: string,
@@ -272,13 +301,13 @@ This tool launches its own browser independently of ChromeService.
 
 **Parameters:**
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| script | string | Yes | JavaScript code defining async function |
-| navigateTo | string | No | Page URL to navigate before executing |
-| timeoutSeconds | number | No | Timeout (default 30, min 5, max 180) |
+| Parameter      | Type   | Required | Description                             |
+|----------------|--------|----------|-----------------------------------------|
+| script         | string | Yes      | JavaScript code defining async function |
+| navigateTo     | string | No       | Page URL to navigate before executing   |
+| timeoutSeconds | number | No       | Timeout (default 30, min 5, max: 180)   |
 
-**Output:** Returns JSON result with `type: 'json'` containing:
+**Output:** Returns JSON string containing:
 
 - `result`: The return value from the executed script
 - `logs`: Array of log strings from consoleLog and browser console events
@@ -301,8 +330,9 @@ const result = await agent.callTool("chrome_runPuppeteerScript", {
   timeoutSeconds: 30
 });
 
-console.log('Result:', result.data.result);
-console.log('Logs:', result.data.logs);
+const data = JSON.parse(result);
+console.log('Result:', data.result);
+console.log('Logs:', data.logs);
 ```
 
 **Script Function Signature:**
@@ -332,7 +362,7 @@ The package provides the following service implementation:
 ### ChromeService
 
 The `ChromeService` class implements the `TokenRingService` interface and
-provides browser lifecycle management for Puppeteer automation.
+provides browser lifecycle management for multiple Puppeteer browser instances.
 
 **Interface:**
 
@@ -340,6 +370,7 @@ provides browser lifecycle management for Puppeteer automation.
 interface TokenRingService {
   name: string;
   description: string;
+
   attach(agent: Agent): void;
 }
 ```
@@ -348,6 +379,7 @@ interface TokenRingService {
 
 - `name: "ChromeService"` - Service identifier
 - `description: "Chrome browser automation service"` - Service description
+- `instances: KeyedRegistry<ChromeWebSearchProvider>` - Registry of browser instances
 
 **Constructor:**
 
@@ -355,7 +387,8 @@ interface TokenRingService {
 constructor(options: ChromeConfigSchema)
 ```
 
-- `options`: Configuration object containing `agentDefaults`
+- `options.instances` - Record of named browser instance configurations
+- `options.agentDefaults` - Default settings for agents
 
 **Public Methods:**
 
@@ -365,7 +398,7 @@ attach(agent: Agent): void
 
 Attaches the service to an agent. Merges `agentDefaults` from constructor
 with agent-specific configuration retrieved via
-`agent.getAgentConfigSlice('chrome', ChromeAgentConfigSchema)` using
+`agent.getAgentConfigSlice("chrome", ChromeAgentConfigSchema)` using
 `deepMerge` from `@tokenring-ai/utility`. Then initializes agent state
 using `ChromeState` with the merged configuration.
 
@@ -373,14 +406,28 @@ using `ChromeState` with the merged configuration.
 async getBrowser(agent: Agent): Promise<Browser>
 ```
 
-Retrieves a browser instance based on agent state configuration:
+Retrieves a browser instance from the configured instance:
 
 - Gets state via `agent.getState(ChromeState)`
-- If `state.launch === true`: Launches new browser via
-  `puppeteer.launch(state as LaunchOptions)`
-- If `state.launch === false`: Connects to existing browser via
-  `puppeteer.connect(state as ConnectOptions)`
+- Retrieves the configured instance via `this.instances.require(config.instance)`
+- Calls `instance.getBrowser()` to launch or connect to browser
 - Returns the browser instance
+
+```typescript
+requireInstance(agent: Agent): ChromeWebSearchProvider
+```
+
+Returns the ChromeWebSearchProvider instance configured for the agent:
+
+- Gets state via `agent.getState(ChromeState)`
+- Returns the instance specified by `config.instance`
+- Throws error if no instance is configured
+
+```typescript
+getInstanceEntries(): Iterable<[string, ChromeWebSearchProvider]>
+```
+
+Returns all registered browser instances for plugin registration.
 
 **Usage:**
 
@@ -388,12 +435,24 @@ Retrieves a browser instance based on agent state configuration:
 import ChromeService from "@tokenring-ai/chrome";
 
 const chromeService = new ChromeService({
-  agentDefaults: {
-    launch: true,
-    headless: true,
-    screenshot: {
-      maxPixels: 1000000
+  instances: {
+    default: {
+      launch: true,
+      headless: true,
+      screenshot: {
+        maxPixels: 1000000
+      }
+    },
+    visible: {
+      launch: true,
+      headless: false,
+      screenshot: {
+        maxPixels: 2000000
+      }
     }
+  },
+  agentDefaults: {
+    instance: "default"
   }
 });
 
@@ -410,52 +469,55 @@ The package provides the following provider implementations:
 
 ### ChromeWebSearchProvider
 
-The `ChromeWebSearchProvider` class extends `WebSearchProvider` from
-`@tokenring-ai/websearch` and implements search functionality using
+The `ChromeWebSearchProvider` class implements the `WebSearchProvider` interface
+from `@tokenring-ai/websearch` and provides search functionality using
 Chrome/Puppeteer browser automation.
 
 **Constructor:**
 
 ```typescript
-constructor(chromeService: ChromeService)
+constructor(config: ChromeInstanceConfigSchema)
 ```
 
-- `chromeService`: The ChromeService instance for browser management
+- `config`: Browser instance configuration (launch, headless, etc.)
 
 **Key Methods:**
 
 ```typescript
-async searchWeb(query: string, options?: WebSearchProviderOptions,
-  agent?: Agent): Promise<WebSearchResult>
+async getBrowser(): Promise<Browser>
+```
+
+Returns a browser instance based on configuration:
+
+- If `config.launch === true`: Launches new browser via `puppeteer.launch()`
+- If `config.launch === false`: Connects via `puppeteer.connect()`
+
+```typescript
+async searchWeb(query: string, options?: WebSearchProviderOptions): Promise<WebSearchResult>
 ```
 
 Performs Google web search via Puppeteer. Returns organic search results
 with title, link, and snippet. Uses `[data-ved] h3` selectors for results
 and `[data-sncf]` for snippets. Browser is disconnected after each request.
-**Requires agent parameter.**
 
 ```typescript
-async searchNews(query: string, options?: WebSearchProviderOptions,
-  agent?: Agent): Promise<NewsSearchResult>
+async searchNews(query: string, options?: WebSearchProviderOptions): Promise<NewsSearchResult>
 ```
 
 Performs Google News search via Puppeteer. Returns news articles with
 metadata (title, snippet, source, date). Parses article containers using
 `[data-news-doc-id]` attribute. Browser is disconnected after each request.
-**Requires agent parameter.**
 
 ```typescript
-async fetchPage(url: string, options?: WebPageOptions,
-  agent?: Agent): Promise<WebPageResult>
+async fetchPage(url: string, options?: WebPageOptions): Promise<WebPageResult>
 ```
 
 Scrapes web page content using Puppeteer. Converts HTML to Markdown using
 TurndownService. Supports rendered (`networkidle0`) and non-rendered
 (`domcontentloaded`) fetching. Browser is disconnected after each request.
-**Requires agent parameter.**
 
-**Important:** All methods require an `Agent` parameter. If no agent is
-provided, they throw an error: `"Agent required for ChromeWebSearchProvider"`
+**Important:** All methods manage their own browser lifecycle and do not
+require an Agent parameter.
 
 **Registration:**
 
@@ -463,15 +525,16 @@ The provider is registered with the `WebSearchService` via the plugin system:
 
 ```typescript
 app.waitForService(WebSearchService, websearchService => {
-  websearchService.registerProvider('chrome',
-    new ChromeWebSearchProvider(chromeService));
+  for (const [name, instance] of chromeService.getInstanceEntries()) {
+    websearchService.registerProvider(name, instance);
+  }
 });
 ```
 
 **Usage:**
 
 ```typescript
-import {WebSearchService} from "@tokenring-ai/websearch";
+import { WebSearchService } from "@tokenring-ai/websearch";
 
 const websearchService = app.requireService(WebSearchService);
 const results = await websearchService.search('your query', 'chrome');
@@ -483,24 +546,19 @@ const results = await websearchService.search('your query', 'chrome');
 
 ```typescript
 import ChromeWebSearchProvider from "@tokenring-ai/chrome";
-import ChromeService from "@tokenring-ai/chrome";
 
-const chromeService = new ChromeService({
-  agentDefaults: {
-    launch: true,
-    headless: true,
-    screenshot: {
-      maxPixels: 1000000
-    }
+const provider = new ChromeWebSearchProvider({
+  launch: true,
+  headless: true,
+  screenshot: {
+    maxPixels: 1000000
   }
 });
 
-const provider = new ChromeWebSearchProvider(chromeService);
-
-// Perform a web search (requires agent)
+// Perform a web search
 const results = await provider.searchWeb('TypeScript documentation', {
   countryCode: 'us'
-}, agent);
+});
 
 console.log('Organic results:', results.organic.map(r => r.title));
 console.log('Result count:', results.organic.length);
@@ -509,10 +567,10 @@ console.log('Result count:', results.organic.length);
 ### Google News Search
 
 ```typescript
-// Search for recent news (requires agent)
+// Search for recent news
 const news = await provider.searchNews('artificial intelligence', {
   countryCode: 'us'
-}, agent);
+});
 
 console.log('News articles:', news.news.length);
 
@@ -526,11 +584,11 @@ news.news.forEach(article => {
 ### Page Content Retrieval
 
 ```typescript
-// Scrape web page content (requires agent)
+// Scrape web page content
 const pageContent = await provider.fetchPage(
   'https://example.com/article', {
-  render: true
-}, agent);
+    render: true
+  });
 
 console.log(pageContent.markdown.substring(0, 200) + '...');
 // Returns markdown-formatted content of the page
@@ -538,7 +596,7 @@ console.log(pageContent.markdown.substring(0, 200) + '...');
 // Non-rendered fetching (faster, no JavaScript)
 const staticContent = await provider.fetchPage('https://example.com', {
   render: false
-}, agent);
+});
 ```
 
 ### Tool Usage Examples
@@ -551,32 +609,34 @@ const result = await agent.callTool("chrome_scrapePageText", {
   timeoutSeconds: 30
 });
 
-console.log(result.text); // Markdown content
+console.log(result.result); // Description text
+console.log(result.attachments[0].body); // Markdown content
 ```
 
 **Scrape Page Metadata:**
 
 ```typescript
-const metadata = await agent.callTool("chrome_scrapePageMetadata", {
+const result = await agent.callTool("chrome_scrapePageMetadata", {
   url: "https://example.com/article",
   timeoutSeconds: 30
 });
 
-console.log('Head HTML:', metadata.data.headHtml.substring(0, 200));
-console.log('JSON-LD blocks:', metadata.data.jsonLd.length);
+const data = JSON.parse(result);
+console.log('Head HTML:', data.headHtml.substring(0, 200));
+console.log('JSON-LD blocks:', data.jsonLd.length);
 ```
 
 **Take Screenshot:**
 
 ```typescript
-const screenshot = await agent.callTool("chrome_takeScreenshot", {
+const result = await agent.callTool("chrome_takeScreenshot", {
   url: "https://example.com",
   screenWidth: 1024
 });
 
 // Save to file
 import fs from 'fs';
-fs.writeFileSync('screenshot.png', screenshot.data, 'base64');
+fs.writeFileSync('screenshot.png', result.attachments[0].body, 'base64');
 ```
 
 **Run Custom Puppeteer Script:**
@@ -596,8 +656,9 @@ const result = await agent.callTool("chrome_runPuppeteerScript", {
   timeoutSeconds: 30
 });
 
-console.log('Result:', result.data.result);
-console.log('Logs:', result.data.logs);
+const data = JSON.parse(result);
+console.log('Result:', data.result);
+console.log('Logs:', data.logs);
 ```
 
 ## Plugin Integration
@@ -608,14 +669,13 @@ The package is registered as a service and tool provider in the TokenRing
 plugin system via `plugin.ts`:
 
 ```typescript
-import type {TokenRingPlugin} from "@tokenring-ai/app";
-import {ChatService} from "@tokenring-ai/chat";
-import {WebSearchService} from "@tokenring-ai/websearch";
-import {z} from "zod";
+import type { TokenRingPlugin } from "@tokenring-ai/app";
+import { ChatService } from "@tokenring-ai/chat";
+import { WebSearchService } from "@tokenring-ai/websearch";
+import { z } from "zod";
 import ChromeService from "./ChromeService.ts";
-import ChromeWebSearchProvider from "./ChromeWebSearchProvider.ts";
-import packageJSON from "./package.json" with {type: "json"};
-import {ChromeConfigSchema} from "./schema.ts";
+import packageJSON from "./package.json" with { type: "json" };
+import { ChromeConfigSchema } from "./schema.ts";
 import tools from "./tools.ts";
 
 const packageConfigSchema = z.object({
@@ -628,17 +688,14 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   install(app, config) {
-    app.waitForService(ChatService, (chatService) =>
-      chatService.addTools(tools),
-    );
+    app.waitForService(ChatService, chatService => chatService.addTools(...tools));
     const chromeService = new ChromeService(config.chrome);
     app.addServices(chromeService);
 
-    app.waitForService(WebSearchService, (websearchService) => {
-      websearchService.registerProvider(
-        "chrome",
-        new ChromeWebSearchProvider(chromeService),
-      );
+    app.waitForService(WebSearchService, websearchService => {
+      for (const [name, instance] of chromeService.getInstanceEntries()) {
+        websearchService.registerProvider(name, instance);
+      }
     });
   },
   config: packageConfigSchema,
@@ -657,40 +714,64 @@ const app = new TokenRingApp();
 
 app.install(chromePlugin, {
   chrome: {
-    agentDefaults: {
-      launch: true,
-      headless: true,
-      screenshot: {
-        maxPixels: 1000000
+    instances: {
+      default: {
+        launch: true,
+        headless: true,
+        screenshot: {
+          maxPixels: 1000000
+        }
       }
+    },
+    agentDefaults: {
+      instance: "default"
     }
   },
 });
 ```
 
-### Connecting to Existing Browser
+### Configuring Multiple Browser Instances
 
-For production environments, connect to an existing browser to avoid
-launching overhead:
+For different use cases, configure multiple browser instances:
 
 ```typescript
 app.install(chromePlugin, {
   chrome: {
+    instances: {
+      headless: {
+        launch: true,
+        headless: true,
+        screenshot: {
+          maxPixels: 1000000
+        }
+      },
+      visible: {
+        launch: true,
+        headless: false,
+        screenshot: {
+          maxPixels: 2000000
+        }
+      },
+      connected: {
+        launch: false,
+        browserWSEndpoint: "ws://localhost:9222/devtools/browser"
+      }
+    },
     agentDefaults: {
-      launch: false,
-      browserWSEndpoint: "ws://localhost:9222/devtools/browser"
+      instance: "headless"
     }
   }
 });
 ```
 
-**Note:** Requires Chrome/Puppeteer to be launched with
+**Note:** The `connected` instance requires Chrome/Puppeteer to be launched with
 `--remote-debugging-port=9222` flag.
 
 ### Accessing Services and Providers
 
 ```typescript
-import {WebSearchService} from "@tokenring-ai/websearch";
+import ChromeService from "@tokenring-ai/chrome";
+import { WebSearchService } from "@tokenring-ai/websearch";
 
 // Access ChromeService directly
 const chromeService = app.requireService(ChromeService);
@@ -712,7 +793,7 @@ The package depends on the following core packages:
 - `@tokenring-ai/websearch` 0.2.0 - Base WebSearchProvider and result types
 - `@tokenring-ai/utility` 0.2.0 - Utility functions for deep merging
 - `puppeteer` ^24.40.0 - Headless Chrome browser automation
-- `turndown` ^7.2.2 - HTML to Markdown conversion
+- `turndown` ^7.2.4 - HTML to Markdown conversion
 - `zod` ^4.3.6 - Runtime type validation
 
 **Dev Dependencies:**
@@ -774,11 +855,11 @@ Error: [chrome_scrapePageText] Invalid URL
 Solution: Ensure URL is properly formed and includes http:// or https://
 ```
 
-#### Agent Required
+#### Instance Not Configured
 
 ```text
-Error: Agent required for ChromeWebSearchProvider
-Solution: Pass agent parameter to provider methods
+Error: Chrome instance not configured
+Solution: Ensure agent has an instance configured via ChromeAgentConfigSchema
 ```
 
 ## Best Practices
@@ -863,7 +944,7 @@ bun run test:watch
 
 ```typescript
 // vitest.config.ts
-import {defineConfig} from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -966,6 +1047,14 @@ pkg/chrome/
   (independent operation)
 - For consistent behavior or custom control, consider using
   `runPuppeteerScript`
+
+### Instance Configuration Issues
+
+#### "Chrome instance not configured"
+
+- Ensure agent has an instance configured via `ChromeAgentConfigSchema`
+- Check that the instance name exists in `chrome.instances`
+- Verify `agentDefaults.instance` is set correctly
 
 ### Custom Script Execution
 
