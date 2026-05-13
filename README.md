@@ -287,14 +287,33 @@ This tool launches its own browser independently of ChromeService.
 ```typescript
 {
   name: "chrome_runPuppeteerScript",
-  displayName: "Chrome/runPuppeteerScript",
-  description: "Run a Puppeteer script with access to a browser and page.
-  Accepts a JavaScript function or module as a string, executes it with Puppeteer
-  page instance, and returns the result.",
+    displayName
+:
+  "Chrome/runPuppeteerScript",
+    description
+:
+  "Run a Puppeteer script with access to a browser and page.
+  Accepts
+  a
+  JavaScript
+
+  function or
+
+  module as
+  a
+  string, executes
+  it
+  with Puppeteer
+    page
+  instance, and
+  returns
+  the
+  result.
+  ",
   inputSchema: {
     script: string,
-    navigateTo?: string,
-    timeoutSeconds?: number
+      navigateTo ? : string,
+      timeoutSeconds ? : number
   }
 }
 ```
@@ -878,7 +897,7 @@ the tool:
 - **chrome_takeScreenshot**: Uses `browser.close()` - terminates browser
   process
 - **chrome_runPuppeteerScript**: Launches its own browser with `browser.close()`
-  - independent operation
+- independent operation
 
 **Understanding disconnect() vs close():**
 
@@ -944,7 +963,7 @@ bun run test:watch
 
 ```typescript
 // vitest.config.ts
-import { defineConfig } from 'vitest/config';
+import {defineConfig} from 'vitest/config';
 
 export default defineConfig({
   test: {
