@@ -1,6 +1,5 @@
 import { AgentStateSlice } from "@tokenring-ai/agent/types";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import markdownList from "@tokenring-ai/utility/string/markdownList";
 import type { z } from "zod";
 import { ChromeConfigSchema, type ParsedChromeConfig } from "../schema.ts";
@@ -22,11 +21,11 @@ export class ChromeState extends AgentStateSlice<typeof serializationSchema> {
   }
 
   deserialize(data: z.output<typeof serializationSchema>): void {
-    this.config = deepMerge(this.config, data);
+    this.config = deepClone(this.config, data);
   }
 
   show(): string {
     return `Chrome:
-${markdownList([`Insteance: ${this.config.instance}`])}`;
+${markdownList([`Instance: ${this.config.instance}`])}`;
   }
 }

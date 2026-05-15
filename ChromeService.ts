@@ -1,6 +1,6 @@
 import type Agent from "@tokenring-ai/agent/Agent";
 import type { TokenRingService } from "@tokenring-ai/app/types";
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import type { Browser } from "puppeteer";
 import type { z } from "zod";
@@ -32,7 +32,7 @@ export default class ChromeService implements TokenRingService {
   }
 
   attach(agent: Agent): void {
-    const config = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice("chrome", ChromeAgentConfigSchema));
+    const config = deepClone(this.options.agentDefaults, agent.getAgentConfigSlice("chrome", ChromeAgentConfigSchema));
     agent.initializeState(ChromeState, config);
   }
 

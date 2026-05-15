@@ -22,89 +22,17 @@ scripts through a headless Chrome browser environment.
 
 ## Installation
 
+This package is part of the Token Ring monorepo and is installed via workspace
+dependencies. To install in your project:
+
 ```bash
-bun install @tokenring-ai/chrome
+bun add @tokenring-ai/chrome
 ```
 
-## Configuration
+## Chat Commands
 
-### ChromeInstanceConfigSchema
-
-Configuration for individual Chrome browser instances:
-
-```typescript
-export const ChromeInstanceConfigSchema = z.object({
-  launch: z.boolean().default(true),
-  headless: z.boolean().default(false),
-  browserWSEndpoint: z.string().exactOptional(),
-  executablePath: z.string().exactOptional(),
-  screenshot: z
-    .object({
-      maxPixels: z.number().default(1000000),
-    })
-    .prefault({}),
-});
-```
-
-### ChromeAgentConfigSchema
-
-Agent-specific configuration:
-
-```typescript
-export const ChromeAgentConfigSchema = z
-  .object({
-    instance: z.string().exactOptional(),
-  })
-  .prefault({});
-```
-
-### ChromeConfigSchema
-
-Top-level package configuration:
-
-```typescript
-export const ChromeConfigSchema = z.object({
-  instances: z.record(z.string(), ChromeInstanceConfigSchema).prefault({
-    chrome: {},
-  }),
-  agentDefaults: z
-    .object({
-      instance: z.string().default("chrome"),
-    })
-    .prefault({}),
-});
-```
-
-### Example Configuration
-
-```yaml
-chrome:
-  instances:
-    default:
-      launch: true
-      headless: true
-      screenshot:
-        maxPixels: 1000000
-    visible:
-      launch: true
-      headless: false
-      screenshot:
-        maxPixels: 2000000
-  agentDefaults:
-    instance: default
-```
-
-**Configuration Notes:**
-
-- `instances` - Record of named browser instances with their configurations
-- `agentDefaults.instance` - Default instance name for agents (default: "chrome")
-- `launch: true` - Creates a new Puppeteer browser instance for each operation
-- `launch: false` - Connects to an existing browser session
-- `headless: true` - Runs browser in headless mode (default: false)
-- `headless: false` - Runs browser with visible UI (useful for debugging)
-- `browserWSEndpoint` - WebSocket endpoint for connecting to existing browser
-- `executablePath` - Custom path to Chrome/Chromium executable
-- `screenshot.maxPixels` - Maximum total pixels for viewport (default: 1000000)
+This package does not define any chat commands. All functionality is exposed
+via tools that can be called by AI agents.
 
 ## Tools
 
@@ -287,33 +215,14 @@ This tool launches its own browser independently of ChromeService.
 ```typescript
 {
   name: "chrome_runPuppeteerScript",
-    displayName
-:
-  "Chrome/runPuppeteerScript",
-    description
-:
-  "Run a Puppeteer script with access to a browser and page.
-  Accepts
-  a
-  JavaScript
-
-  function or
-
-  module as
-  a
-  string, executes
-  it
-  with Puppeteer
-    page
-  instance, and
-  returns
-  the
-  result.
-  ",
+  displayName: "Chrome/runPuppeteerScript",
+  description: "Run a Puppeteer script with access to a browser and page.
+  Accepts a JavaScript function or module as a string, executes it with Puppeteer
+  page instance, and returns the result.",
   inputSchema: {
     script: string,
-      navigateTo ? : string,
-      timeoutSeconds ? : number
+    navigateTo?: string,
+    timeoutSeconds?: number
   }
 }
 ```
@@ -373,6 +282,86 @@ The script should define or export an async function that accepts:
 - Enforces timeout on script execution (max 180s, min 5s)
 - Browser is **closed** after operation via `browser.close()`
 - **Important:** Operates independently of ChromeService and agent config
+
+## Configuration
+
+### ChromeInstanceConfigSchema
+
+Configuration for individual Chrome browser instances:
+
+```typescript
+export const ChromeInstanceConfigSchema = z.object({
+  launch: z.boolean().default(true),
+  headless: z.boolean().default(false),
+  browserWSEndpoint: z.string().exactOptional(),
+  executablePath: z.string().exactOptional(),
+  screenshot: z
+    .object({
+      maxPixels: z.number().default(1000000),
+    })
+    .prefault({}),
+});
+```
+
+### ChromeAgentConfigSchema
+
+Agent-specific configuration:
+
+```typescript
+export const ChromeAgentConfigSchema = z
+  .object({
+    instance: z.string().exactOptional(),
+  })
+  .prefault({});
+```
+
+### ChromeConfigSchema
+
+Top-level package configuration:
+
+```typescript
+export const ChromeConfigSchema = z.object({
+  instances: z.record(z.string(), ChromeInstanceConfigSchema).prefault({
+    chrome: {},
+  }),
+  agentDefaults: z
+    .object({
+      instance: z.string().default("chrome"),
+    })
+    .prefault({}),
+});
+```
+
+### Example Configuration
+
+```yaml
+chrome:
+  instances:
+    default:
+      launch: true
+      headless: true
+      screenshot:
+        maxPixels: 1000000
+    visible:
+      launch: true
+      headless: false
+      screenshot:
+        maxPixels: 2000000
+  agentDefaults:
+    instance: default
+```
+
+**Configuration Notes:**
+
+- `instances` - Record of named browser instances with their configurations
+- `agentDefaults.instance` - Default instance name for agents (default: "chrome")
+- `launch: true` - Creates a new Puppeteer browser instance for each operation
+- `launch: false` - Connects to an existing browser session
+- `headless: true` - Runs browser in headless mode (default: false)
+- `headless: false` - Runs browser with visible UI (useful for debugging)
+- `browserWSEndpoint` - WebSocket endpoint for connecting to existing browser
+- `executablePath` - Custom path to Chrome/Chromium executable
+- `screenshot.maxPixels` - Maximum total pixels for viewport (default: 1000000)
 
 ## Services
 
@@ -806,11 +795,11 @@ The package depends on the following core packages:
 
 **Runtime Dependencies:**
 
-- `@tokenring-ai/app` 0.2.0 - Application framework and plugin system
-- `@tokenring-ai/chat` 0.2.0 - Chat service and tool definitions
-- `@tokenring-ai/agent` 0.2.0 - Agent framework for tool execution
-- `@tokenring-ai/websearch` 0.2.0 - Base WebSearchProvider and result types
-- `@tokenring-ai/utility` 0.2.0 - Utility functions for deep merging
+- `@tokenring-ai/app` workspace:* - Application framework and plugin system
+- `@tokenring-ai/chat` workspace:* - Chat service and tool definitions
+- `@tokenring-ai/agent` workspace:* - Agent framework for tool execution
+- `@tokenring-ai/websearch` workspace:* - Base WebSearchProvider and result types
+- `@tokenring-ai/utility` workspace:* - Utility functions for deep merging
 - `puppeteer` ^24.40.0 - Headless Chrome browser automation
 - `turndown` ^7.2.4 - HTML to Markdown conversion
 - `zod` ^4.3.6 - Runtime type validation
@@ -897,7 +886,7 @@ the tool:
 - **chrome_takeScreenshot**: Uses `browser.close()` - terminates browser
   process
 - **chrome_runPuppeteerScript**: Launches its own browser with `browser.close()`
-- independent operation
+  independent operation
 
 **Understanding disconnect() vs close():**
 
