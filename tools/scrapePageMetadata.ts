@@ -12,7 +12,7 @@ export type ExecuteResult = {
   url: string;
 };
 
-async function execute({ url, timeoutSeconds = 30 }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
+async function execute({ url, timeoutSeconds  }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
   if (!url) {
     throw new Error(`[${name}] url is required`);
   }
@@ -85,7 +85,7 @@ const description =
 
 const inputSchema = z.object({
   url: z.string().describe("The URL of the web page to scrape metadata from."),
-  timeoutSeconds: z.number().int().min(5).max(180).describe("(Optional) Timeout for the operation (default 30s).").exactOptional(),
+  timeoutSeconds: z.number().min(5).max(180).default(120).describe("(Optional) Timeout for the operation (default 30s)."),
 });
 
 export default {

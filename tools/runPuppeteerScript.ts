@@ -12,7 +12,7 @@ export type ExecuteResult = {
   logs: string[];
 };
 
-async function execute({ script, navigateTo, timeoutSeconds = 30 }: z.output<typeof inputSchema>, _agent: Agent): Promise<TokenRingToolResult> {
+async function execute({ script, navigateTo, timeoutSeconds  }: z.output<typeof inputSchema>, _agent: Agent): Promise<TokenRingToolResult> {
   // Launch Puppeteer browser (headless mode can be adjusted as needed)
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
@@ -74,7 +74,7 @@ const inputSchema = z.object({
       "A JavaScript code string to run. It should export or define an async function to be called with ({ page, browser, consoleLog }) as arguments. The return value will be returned as output.",
     ),
   navigateTo: z.string().describe("(Optional) Page URL to navigate to before executing the script.").exactOptional(),
-  timeoutSeconds: z.number().int().min(5).max(180).describe("(Optional) Timeout for script execution (default 30s, max 180).").exactOptional(),
+  timeoutSeconds: z.number().min(5).max(180).default(120).describe("(Optional) Timeout for script execution (default 30s, max 180)."),
 });
 
 export default {

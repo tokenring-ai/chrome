@@ -6,7 +6,7 @@ import ChromeService from "../ChromeService.ts";
 const name = "chrome_takeScreenshot";
 const displayName = "Chrome/takeScreenshot";
 
-async function execute({ url, screenWidth = 1024 }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
+async function execute({ url, screenWidth  }: z.output<typeof inputSchema>, agent: Agent): Promise<TokenRingToolResult> {
   const chromeService = agent.requireServiceByType(ChromeService);
   const instance = chromeService.requireInstance(agent);
   const browser = await chromeService.getBrowser(agent);
