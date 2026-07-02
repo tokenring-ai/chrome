@@ -5,12 +5,12 @@
   "dependencies": {
     "@tokenring-ai/app": "workspace:*",
     "@tokenring-ai/chat": "workspace:*",
-    "zod": "^4.3.6",
+    "zod": "^4.4.3",
     "@tokenring-ai/agent": "workspace:*",
     "@tokenring-ai/websearch": "workspace:*",
     "@tokenring-ai/utility": "workspace:*",
     "turndown": "^7.2.4",
-    "puppeteer": "^24.40.0"
+    "puppeteer": "^25.2.1"
   },
   "exports": {
     ".": "./index.ts",
